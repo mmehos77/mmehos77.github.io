@@ -64,6 +64,7 @@ input[type=search]:focus-visible,button:focus-visible{outline:2px solid var(--ac
 .chip .x{margin-left:6px;opacity:.8}
 .linkbtn{font:inherit;font-size:.8rem;background:none;border:0;color:var(--accent);cursor:pointer;padding:2px 4px;text-transform:none;letter-spacing:0}
 .example{font-size:.78rem;color:var(--muted)}
+.toplink{text-align:left;font-size:.88rem;font-weight:600;padding:0}
 .redflag{border-radius:6px;padding:9px 11px;background:var(--imm-soft);color:var(--ink);border:1px solid var(--imm);font-size:.88rem}
 .redflag b{color:var(--imm)}
 .causes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -122,6 +123,7 @@ details .body ul{margin:0;padding-left:1.1rem}
     <section class="panel" aria-labelledby="h-in">
       <h2 id="h-in"><span><span class="step">1</span>What you see</span><button class="linkbtn" id="clear" type="button">Clear all</button></h2>
       <div class="selected" id="selected" aria-live="polite"></div>
+      <button type="button" class="linkbtn toplink" id="topLink" hidden></button>
       <div class="example" id="exampleNote">Loaded with an example: a hiker on a hot afternoon.</div>
       <input type="search" id="q" placeholder="Filter signs, e.g. “wheez”, “numb”, “sting”" aria-label="Filter signs and situations">
       <div class="groups" id="groups"></div>
@@ -152,7 +154,7 @@ details .body ul{margin:0;padding-left:1.1rem}
           <li><b>Explains</b>: the weighted share of <i>your</i> entries that the condition lists.</li>
           <li><b>Matches</b>: the weighted share of <i>the condition's</i> listed signs that you entered.</li>
         </ul>
-        <p>The match score is the harmonic mean of the two. It is not a probability. When scores tie, conditions the manual says to evacuate sooner rank higher.</p>
+        <p>The match score combines the two but counts <b>Explains</b> twice as heavily as <b>Matches</b>. A cause that accounts for everything you saw should outrank one that fits only part of it, because casualties rarely show every sign the manual lists. Situation chips you haven't entered don't count against a condition. The score is not a probability. When scores tie, conditions the manual says to evacuate sooner rank higher.</p>
       </div>
       <div>
         <p><b>Situation chips</b> (dashed outline) are not signs listed in the manual. They come from each chapter's scope, such as "hot environment" for the heat illness chapter. They carry the same weight as signs.</p>
@@ -371,8 +373,11 @@ function rank(){
     const keys = [...new Set(c.signs.map(x=>x[0]))];
     const hit = keys.filter(k=>sel.has(k));
     if(!hit.length) return null;
-    const wHit = hit.reduce((a,k)=>a+W(k),0), wC = keys.reduce((a,k)=>a+W(k),0);
-    const P = wHit/wU, R = wHit/wC, score = 2*P*R/(P+R);
+    // Situation chips you did not enter do not count against a condition.
+    const keysR = keys.filter(k=>!SBY[k].ctx || sel.has(k));
+    const wHit = hit.reduce((a,k)=>a+W(k),0), wC = keysR.reduce((a,k)=>a+W(k),0);
+    // F0.5: "explains your entries" counts twice as heavily as "matches its signs".
+    const P = wHit/wU, R = wHit/wC, score = 1.25*P*R/(0.25*P+R);
     return {c,hit,keys,P,R,score};
   }).filter(Boolean).sort((a,b)=> (b.score-a.score) || (EVAC[a.c.evac][2]-EVAC[b.c.evac][2]));
 }
@@ -404,6 +409,7 @@ function renderRank(){
   $("respNote").textContent = "Breathing signs: TC 4-02.1 has no asthma chapter, so wheezing here can only match choking or sting reactions.";
   if(current && !r.find(x=>x.c.id===current)) current = null;
   if(!current && r.length) current = r[0].c.id;
+  const tl=$("topLink"); if(r.length){ tl.hidden=false; tl.textContent="Top match: "+r[0].c.name+" · see all "+r.length+" ↓"; } else tl.hidden=true;
   renderTx();
   document.querySelectorAll(".cause").forEach(b=>b.setAttribute("aria-current", b.dataset.id===current));
 }
@@ -424,11 +430,12 @@ function renderTx(){
     <div class="fid">${c.fid==="v"?"Wording: short excerpts from the manual (Soldier/casualty language kept).":"Wording: a close summary of the manual's text, not a verbatim quote."}</div>`;
 }
 
-function toggle(id){ isExample=false; sel.has(id)?sel.delete(id):sel.add(id); renderChips(); renderRank(); }
+function toggle(id){ isExample=false; sel.has(id)?sel.delete(id):sel.add(id); current=null; renderChips(); renderRank(); }
 $("groups").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) toggle(b.dataset.id);});
 $("selected").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) toggle(b.dataset.id);});
 $("causes").addEventListener("click",e=>{const b=e.target.closest(".cause"); if(!b) return; current=b.dataset.id; renderTx(); document.querySelectorAll(".cause").forEach(x=>x.setAttribute("aria-current",x.dataset.id===current)); if(window.innerWidth<=980) $("h-tx").scrollIntoView({behavior:"smooth",block:"start"});});
 $("q").addEventListener("input",renderChips);
+$("topLink").addEventListener("click",()=>$("h-rank").scrollIntoView({behavior:"smooth",block:"start"}));
 $("clear").addEventListener("click",()=>{sel.clear(); isExample=false; current=null; $("q").value=""; renderChips(); renderRank();});
 renderChips(); renderRank();
 })();
