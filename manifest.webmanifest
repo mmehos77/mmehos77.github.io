@@ -1,0 +1,15 @@
+{
+  "name": "TC 4-02.1 Symptom Sorter",
+  "short_name": "Symptom Sorter",
+  "description": "Design prototype: ranks first aid conditions from Army TC 4-02.1 by signs entered. Not for real casualty decisions.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef0eb",
+  "theme_color": "#3e5a2c",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

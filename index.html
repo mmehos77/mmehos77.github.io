@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#3e5a2c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TC 4-02.1 Symptom Sorter</title>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: three working columns (inputs → ranked causes → treatment), stacking to one column on phones.
+   System fonts on purpose: a field tool must render offline with no font download. */
+:root{
+  --bg:#eef0eb; --panel:#fbfcf9; --ink:#1d2219; --muted:#5d6656; --line:#d3d8cc;
+  --accent:#3e5a2c; --accent-ink:#ffffff; --accent-soft:#dde6d3;
+  --imm:#b3261e; --imm-soft:#f8dedb; --evac:#b45a00; --evac-soft:#fbe7d2;
+  --aid:#2f5d8a; --aid-soft:#dce7f2; --self:#4b6b3a; --self-soft:#e1ebd8; --na:#6d6d6d; --na-soft:#e7e7e4;
+  --bar:#3e5a2c; --bar-bg:#dfe3d8;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141812; --panel:#1c2119; --ink:#e6eadf; --muted:#9aa391; --line:#323a2c;
+  --accent:#9cc27f; --accent-ink:#11160e; --accent-soft:#2a3624;
+  --imm:#ff8a80; --imm-soft:#3d1a17; --evac:#f0a75a; --evac-soft:#3a2711; --aid:#8db8e3; --aid-soft:#17283a;
+  --self:#a8cf8e; --self-soft:#22301b; --na:#b0b0aa; --na-soft:#2a2a27; --bar:#9cc27f; --bar-bg:#2c3427; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141812; --panel:#1c2119; --ink:#e6eadf; --muted:#9aa391; --line:#323a2c;
+  --accent:#9cc27f; --accent-ink:#11160e; --accent-soft:#2a3624;
+  --imm:#ff8a80; --imm-soft:#3d1a17; --evac:#f0a75a; --evac-soft:#3a2711; --aid:#8db8e3; --aid-soft:#17283a;
+  --self:#a8cf8e; --self-soft:#22301b; --na:#b0b0aa; --na-soft:#2a2a27; --bar:#9cc27f; --bar-bg:#2c3427; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.src{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.notice{border:1px solid var(--line);border-left:4px solid var(--evac);background:var(--panel);padding:10px 12px;border-radius:6px;font-size:.88rem}
+.notice b{color:var(--evac)}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.panel h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.step{font-family:var(--mono);color:var(--accent);margin-right:6px}
+input[type=search]{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+input[type=search]:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.selected{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center}
+.selected .empty{color:var(--muted);font-size:.88rem}
+.groups{display:flex;flex-direction:column;gap:12px;max-height:62vh;overflow:auto;padding-right:4px}
+@media (max-width:980px){.groups{max-height:none}}
+.group h3{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.86rem;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;line-height:1.2;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip.ctx{border-style:dashed}
+.chip.ctx[aria-pressed=true]{border-style:solid}
+.chip .x{margin-left:6px;opacity:.8}
+.linkbtn{font:inherit;font-size:.8rem;background:none;border:0;color:var(--accent);cursor:pointer;padding:2px 4px;text-transform:none;letter-spacing:0}
+.example{font-size:.78rem;color:var(--muted)}
+.redflag{border-radius:6px;padding:9px 11px;background:var(--imm-soft);color:var(--ink);border:1px solid var(--imm);font-size:.88rem}
+.redflag b{color:var(--imm)}
+.causes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.cause{border:1px solid var(--line);border-radius:7px;background:var(--bg);cursor:pointer;padding:10px 11px;display:flex;flex-direction:column;gap:6px;text-align:left;font:inherit;color:inherit;width:100%}
+.cause:hover{border-color:var(--accent)}
+.cause[aria-current=true]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.crow{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.cname{font-weight:600}
+.rank{font-family:var(--mono);color:var(--muted);margin-right:6px;font-variant-numeric:tabular-nums}
+.pct{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.86rem}
+.bar{height:5px;border-radius:3px;background:var(--bar-bg);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--bar)}
+.why{font-size:.8rem;color:var(--muted)}
+.why em{font-style:normal;color:var(--ink)}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.t-imm{background:var(--imm-soft);color:var(--imm)} .t-evac{background:var(--evac-soft);color:var(--evac)}
+.t-aid{background:var(--aid-soft);color:var(--aid)} .t-self{background:var(--self-soft);color:var(--self)} .t-na{background:var(--na-soft);color:var(--na)}
+.placeholder{color:var(--muted);font-size:.9rem}
+.tx h3{margin:0;font-size:1.15rem}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.8rem;color:var(--muted)}
+.ref{font-family:var(--mono)}
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec h4{margin:0;font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.sec ol,.sec ul{margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:4px}
+.sec.caut li::marker{color:var(--imm)}
+.signs{display:flex;flex-wrap:wrap;gap:5px}
+.sign{font-size:.8rem;padding:3px 8px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.sign.hit{border-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
+.evacbox{border-radius:6px;padding:9px 11px;font-size:.9rem}
+#tx{display:flex;flex-direction:column;gap:14px}
+.fid{font-size:.78rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+details summary{cursor:pointer;font-weight:600}
+details .body{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 24px;margin-top:10px;font-size:.88rem}
+details .body p{margin:0 0 6px;max-width:65ch}
+details .body ul{margin:0;padding-left:1.1rem}
+.mono{font-family:var(--mono)}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s ease}}
+</style>
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>TC 4-02.1 Symptom Sorter</h1>
+    <span class="src" id="offline" aria-live="polite">Checking offline support…</span>
+    <span class="src">Source: Army TC 4-02.1 <i>First Aid</i>, 2016 (C2, 2018) · public release, distribution unlimited</span>
+  </header>
+
+  <div class="notice"><b>Design prototype.</b> Built from part of one Army manual to test the interface. The ranking is a simple, unvalidated match score. Do not use it to make decisions about a real casualty.</div>
+
+  <div class="grid">
+    <!-- 1. Inputs -->
+    <section class="panel" aria-labelledby="h-in">
+      <h2 id="h-in"><span><span class="step">1</span>What you see</span><button class="linkbtn" id="clear" type="button">Clear all</button></h2>
+      <div class="selected" id="selected" aria-live="polite"></div>
+      <div class="example" id="exampleNote">Loaded with an example: a hiker on a hot afternoon.</div>
+      <input type="search" id="q" placeholder="Filter signs, e.g. “wheez”, “numb”, “sting”" aria-label="Filter signs and situations">
+      <div class="groups" id="groups"></div>
+    </section>
+
+    <!-- 2. Ranked causes -->
+    <section class="panel" aria-labelledby="h-rank">
+      <h2 id="h-rank"><span><span class="step">2</span>Possible causes in this manual</span><span id="count"></span></h2>
+      <div id="redflag"></div>
+      <ol class="causes" id="causes"></ol>
+      <div class="placeholder" id="rankEmpty" hidden>Pick one or more signs to see which conditions in the manual list them.</div>
+      <div class="why" id="respNote" hidden></div>
+    </section>
+
+    <!-- 3. Treatment -->
+    <section class="panel tx" aria-labelledby="h-tx">
+      <h2 id="h-tx"><span><span class="step">3</span>First aid in the manual</span></h2>
+      <div id="tx"><div class="placeholder">Select a cause to see its first aid steps, cautions and evacuation guidance.</div></div>
+    </section>
+  </div>
+
+  <details>
+    <summary>How the ranking works, and what this prototype leaves out</summary>
+    <div class="body">
+      <div>
+        <p><b>Score.</b> Each sign gets a weight: signs listed under many conditions (dizziness, nausea) count less than signs listed under few (hot dry skin, rigid abdomen). For each condition the page computes two things:</p>
+        <ul>
+          <li><b>Explains</b>: the weighted share of <i>your</i> entries that the condition lists.</li>
+          <li><b>Matches</b>: the weighted share of <i>the condition's</i> listed signs that you entered.</li>
+        </ul>
+        <p>The match score is the harmonic mean of the two. It is not a probability. When scores tie, conditions the manual says to evacuate sooner rank higher.</p>
+      </div>
+      <div>
+        <p><b>Situation chips</b> (dashed outline) are not signs listed in the manual. They come from each chapter's scope, such as "hot environment" for the heat illness chapter. They carry the same weight as signs.</p>
+        <p><b>Evacuation tags</b> repeat the manual's own wording: "Evacuate immediately", "Evacuate (as soon as possible)", "Seek medical aid", or no evacuation listed.</p>
+      </div>
+      <div>
+        <p><b>Not included</b></p>
+        <ul>
+          <li>Ch 16–22 (head and abdominal injuries, impalement, snakebite, anaphylaxis treatment) could not be retrieved for this test.</li>
+          <li>Ch 9 (nerve agents) and Ch 24–27 (eye injuries) were left out as outside the test's scope.</li>
+          <li>Asthma: TC 4-02.1 has no asthma chapter.</li>
+          <li>Ch 10 and Ch 13 entries are close summaries of the manual's text. Other chapters use short verbatim excerpts.</li>
+        </ul>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+// ---------- Sign vocabulary ----------
+// ctx:true = situation chip derived from chapter scope (not a listed sign). red:true = life-threat cue.
+const S = [
+ // Situation
+ ["hot","Hot environment or hard exertion","Situation",1],["cold","Exposed to cold","Situation",1],["wetfeet","Feet cold and wet for hours","Situation",1],
+ ["water","Drank a large amount of water","Situation",0],["bite","Bitten or stung","Situation",1],["tick","Tick found attached","Situation",1],
+ ["heatsrc","Contact with flame, hot liquid or hot object","Situation",1],["elec","Contact with electricity","Situation",1],["chem","Chemical on the skin","Situation",1],
+ ["trauma","Fall, blow or other injury","Situation",1],["chestwound","Open wound to the chest","Situation",1,1],
+ // Mental status
+ ["dizzy","Dizziness","Mental status & general"],["headache","Headache","Mental status & general"],["weak","Weakness","Mental status & general"],
+ ["confused","Confusion or mental status change","Mental status & general"],["combative","Combative","Mental status & general"],
+ ["sleepy","Sleepy, apathetic or lethargic","Mental status & general"],["slurred","Slurred speech or mumbling","Mental status & general"],
+ ["unconscious","Passed out (unconscious)","Mental status & general",0,1],["seizure","Convulsions or seizures","Mental status & general",0,1],
+ ["anxiety","Anxiety","Mental status & general"],["appetite","Loss of appetite or poor food intake","Mental status & general"],
+ // Skin & temperature
+ ["coolsweat","Sweaty but cool skin","Skin & temperature"],["pale","Pale or gray skin","Skin & temperature"],["hotdry","Hot, dry skin","Skin & temperature",0,1],
+ ["shiver","Shivering or chills","Skin & temperature"],["normtemp","Normal to slightly raised temperature","Skin & temperature"],["fever","Fever","Skin & temperature"],
+ ["hives","Itching or hives all over","Skin & temperature"],["burned","Burned skin","Skin & temperature"],
+ // Breathing & pulse
+ ["rapidbr","Rapid breathing","Breathing & pulse"],["slowbr","Slow or shallow breathing","Breathing & pulse"],
+ ["wheeze","Wheezing","Breathing & pulse"],["sob","Shortness of breath or respiratory distress","Breathing & pulse",0,1],["chesttight","Chest tightness","Breathing & pulse"],
+ ["cough","Can speak or cough forcefully","Breathing & pulse"],["silentcough","Silent cough, poor air exchange","Breathing & pulse",0,1],
+ ["lips","Swelling of lips and tongue","Breathing & pulse",0,1],["weakpulse","Weak pulse","Breathing & pulse"],["rapidpulse","Rapid pulse","Breathing & pulse"],
+ // Stomach & urine
+ ["nausea","Nausea","Stomach & urine"],["vomit","Vomiting","Stomach & urine"],["abcramp","Abdominal cramps","Stomach & urine"],
+ ["rigidab","Rigid, board-like abdomen","Stomach & urine"],["bloated","Abdomen distended or bloated","Stomach & urine"],
+ ["drool","Drooling","Stomach & urine"],["incont","Incontinence","Stomach & urine"],["clearurine","Large amounts of clear urine","Stomach & urine"],
+ // Muscles, bones, bleeding
+ ["cramps","Muscle cramps","Muscles, bones & bleeding"],["spasms","Severe muscle spasms or contractions","Muscles, bones & bleeding"],
+ ["deform","Deformity","Muscles, bones & bleeding"],["swelltender","Swelling, tenderness or pain at an injury","Muscles, bones & bleeding"],
+ ["cantmove","Unable to move the injured part","Muscles, bones & bleeding"],["bone","Bone protruding through skin","Muscles, bones & bleeding"],
+ ["discolor","Skin discoloration at the injury","Muscles, bones & bleeding"],["jointpain","Joint or leg pain","Muscles, bones & bleeding"],
+ ["bleedlimb","Bleeding from an arm or leg","Muscles, bones & bleeding"],["bleedlife","Life-threatening bleeding","Muscles, bones & bleeding",0,1],
+ // Local: cold
+ ["numb","Numbness or loss of sensation","At the site (cold)"],["tingle","Tingling or “pins and needles”","At the site (cold)"],
+ ["waxy","Pale, yellowish, waxy skin","At the site (cold)"],["wooden","Tissue feels wooden (frozen)","At the site (cold)"],
+ ["rewarmpain","Severe pain after rewarming","At the site (cold)"],["hotshoot","Cold feet turning hot with shooting pains","At the site (cold)"],
+ ["edema","Severe swelling of feet","At the site (cold)"],["itchlesion","Swollen, itchy, painful patches after cold","At the site (cold)"],
+ // Local: bite / sting / burn
+ ["sharppain","Sharp pain at the site","At the site (bite, sting, burn)"],["burnpain","Intense burning pain at the site","At the site (bite, sting, burn)"],
+ ["dullache","Pinprick that becomes a dull ache","At the site (bite, sting, burn)"],["painless","Painless bite, later bluish with white border","At the site (bite, sting, burn)"],
+ ["bullseye","Red halo or bull's-eye, later an ulcer","At the site (bite, sting, burn)"],["localrs","Redness, swelling or welt at the site","At the site (bite, sting, burn)"],
+ ["localitch","Itching at the site","At the site (bite, sting, burn)"],["circle","Bites in a circular pattern","At the site (bite, sting, burn)"],
+ ["blisters","Blisters at the site","At the site (bite, sting, burn)"],["nodes","Swollen lymph nodes","At the site (bite, sting, burn)"],
+ ["paralysis","Paralysis developing over days","At the site (bite, sting, burn)",0,1]
+].map(a=>({id:a[0],label:a[1],group:a[2],ctx:!!a[3],red:!!a[4]}));
+const SBY = Object.fromEntries(S.map(s=>[s.id,s]));
+
+// ---------- Conditions (from TC 4-02.1) ----------
+// evac: imm | evac | aid | self | na   ·   fid: v = short verbatim excerpts, s = close summary of the manual text
+const GEN_BITE = ["Keep the casualty calm and reassured; limit activity.","Keep the body immobilized.","Remove jewelry.","Gently cleanse the site with saline or the cleanest water available and soap.","Apply a cold pack.","Monitor vital signs."];
+const C = [
+ {id:"heatex",name:"Heat exhaustion",ch:"Ch 11",ref:"¶ 11-4, 11-5",evac:"aid",fid:"v",
+  signs:[["hot"],["dizzy","Dizziness."],["headache","Headache."],["appetite","Loss of appetite."],["nausea","Nausea."],["weak","Weakness."],["coolsweat","Profuse sweating and pale (or gray), moist cool skin."],["pale"],["normtemp","Normal to slightly elevated body temperature."],["cramps","Muscle cramps."]],
+  steps:["Rest Soldier in shade.","Loosen uniform and remove head gear.","Have Soldier drink 2 quarts of water over 1 hour."],
+  evacText:"Seek medical aid. Evacuate if no improvement in 30 minutes, or if Soldier's condition worsens."},
+ {id:"heatstroke",name:"Heat stroke",ch:"Ch 11",ref:"¶ 11-7 to 11-9",evac:"imm",fid:"v",
+  signs:[["hot"],["hotdry","Hot dry skin."],["headache","Headache."],["seizure","Convulsions and chills."],["shiver"],["dizzy","Dizziness."],["nausea","Nausea."],["weak","Weakness."],["weakpulse","Pulse and respirations are weak and rapid"],["rapidbr"],["rapidpulse"],["vomit","Vomiting."],["confused","Confusion, mumbling"],["slurred"],["combative","Combative."],["unconscious","Passing out (unconscious)."]],
+  steps:["Immediately begin cooling the Soldier off.","Cool the casualty with any means available, even before removing clothes.","Rapidly cool by immersing the casualty in cold water.","Place ice packs, if available, in groin, axillae (armpits) and around the neck.","Fan the entire body."],
+  cautions:["Stop cooling if casualty starts shivering.","Give nothing by mouth."],
+  evacText:"The casualty must be evacuated to the nearest medical treatment facility as soon as possible. Evacuate immediately, and continue cooling during transport."},
+ {id:"hypona",name:"Hyponatremia (water intoxication)",ch:"Ch 11",ref:"¶ 11-11, 11-12",evac:"imm",fid:"v",
+  signs:[["hot"],["confused","Mental status changes."],["vomit","Vomiting."],["water","History of consumption of large volume of water."],["appetite","Poor food intake."],["bloated","Abdomen distended/bloated."],["clearurine","Large amounts of clear urine."]],
+  steps:["If awake, allow Soldier to consume salty foods or snacks."],
+  cautions:["Do not give more water or intravenous fluids."],
+  evacText:"Seek medical aid. Evacuate immediately."},
+ {id:"hypothermia",name:"Hypothermia",ch:"Ch 12",ref:"¶ 12-5 to 12-7",evac:"evac",fid:"v",
+  signs:[["cold"],["shiver","Vigorous shivering is typically present; may decrease or cease as core temperature falls."],["sleepy","Conscious, but usually apathetic or lethargic. Sleepiness."],["confused","Confusion."],["slurred","Slurred speech."],["slowbr","Shallow breathing. Very slow respirations."],["weakpulse","Weak pulse."]],
+  steps:["Remove the casualty from the cold environment.","Replace wet clothing with dry clothing.","Cover the casualty with insulating material or blanket.","Wrap the casualty from head to toe.","If casualty is conscious, slowly give high caloric sweet warm fluids."],
+  cautions:["Avoid unnecessary movement of the casualty."],
+  evacText:"Seek medical aid. Evacuate as soon as possible with the casualty lying down.",
+  note:"Field goals per the manual: rescue, examine, insulate, and rapidly transport."},
+ {id:"frostbite",name:"Frostbite",ch:"Ch 12",ref:"¶ 12-10, 12-12",evac:"evac",fid:"v",
+  signs:[["cold"],["numb","Numbness in affected area."],["tingle","Tingling, blistered, swollen, or tender areas."],["blisters"],["waxy","Pale, yellowish, waxy-looking skin (grayish in dark-skinned soldiers)."],["wooden","Frozen tissue that feels wooden to the touch."],["rewarmpain","Significant pain after rewarming"]],
+  steps:["Local rewarming at room temperature or using body heat.","Loosen or remove constricting clothing and remove jewelry.","Move the casualty to a sheltered area, if possible.","Protect the affected area from further cold or trauma."],
+  cautions:["Avoid exposure to excessive heat (open flame, stove tops, steam, heat packs) or rubbing affected tissue."],
+  evacText:"Seek medical aid. Evacuate the casualty."},
+ {id:"immersion",name:"Immersion foot (trench foot)",ch:"Ch 12",ref:"¶ 12-21, 12-22",evac:"evac",fid:"v",
+  signs:[["cold"],["wetfeet"],["hotshoot","Cold, numb feet that may progress to hot with shooting pains."],["numb","Loss of sensation."],["edema","Severe edema and gangrene. Loss of tissue."]],
+  steps:["Remove wet or constrictive clothing, gently wash and dry affected extremities.","Elevate affected limbs and cover with layers of loose, warm, dry clothing."],
+  cautions:["Do not pop blisters, apply lotions or creams, massage, expose to extreme heat or permit Soldiers to walk."],
+  evacText:"Seek medical attention. Evacuate for medical treatment."},
+ {id:"chilblain",name:"Chilblain",ch:"Ch 12",ref:"¶ 12-18, 12-19",evac:"self",fid:"v",
+  signs:[["cold"],["itchlesion","Chilblain lesions are swollen, tender, itchy and painful."],["burnpain","An itching or burning sensation may continue for several hours after exposure."]],
+  steps:["Rewarm affected area, keep warm and dry."],
+  evacText:"No evacuation instruction is listed for chilblain."},
+ {id:"shock",name:"Shock",ch:"Ch 8",ref:"¶ 8-1 to 8-5",evac:"aid",fid:"v",
+  signs:[["coolsweat","Sweaty but cool skin."],["pale","Pale skin."],["confused","Confusion."],["rapidbr","Rapid breathing."]],
+  steps:["Lay the casualty on his back unless a sitting position will allow the casualty to breathe easier.","Elevate the casualty's feet higher than the heart using a stable object so the feet will not fall.","Calm and reassure: take charge, show self-confidence, and assure the casualty that he is being taken care of.","Watch the casualty closely for life-threatening conditions and check for other injuries, if necessary."],
+  evacText:"Seek medical aid.",
+  note:"The retrieved text gave four signs; the manual's full list may be longer."},
+ {id:"choke",name:"Airway obstruction (choking)",ch:"Ch 4",ref:"¶ 4-2 to 4-6",evac:"aid",fid:"v",
+  signs:[["cough","Mild: able to speak or cough forcefully."],["wheeze","Mild: may be wheezing between coughs."],["silentcough","Severe: poor air exchange, increased breathing difficulty, a silent cough."],["sob"]],
+  steps:["Severe obstruction: give abdominal thrusts, “quick backward and upward thrusts.”","Chest thrusts: “performed slowly and distinctly with the intent of relieving the obstruction.”","If the casualty becomes unresponsive, lay him down and then start mouth-to-mouth resuscitation procedures."],
+  evacText:"Seek medical aid.",
+  note:"The manual's steps for a mild obstruction were not retrieved for this test."},
+ {id:"chest",name:"Open chest wound",ch:"Ch 5",ref:"¶ 5-1 to 5-4",evac:"na",fid:"v",
+  signs:[["chestwound","Open wound to the chest"],["trauma"]],
+  steps:["Apply gloves from casualty's IFAK.","Place gloved hand or back of hand over open chest wound to create temporary seal.","Instruct the casualty to fully exhale, then immediately place the vent of the commercial chest seal directly over the wound.","No commercial seal: place the inner surface of the outer wrapper or other occlusive material directly over the wound."],
+  cautions:["Removing stuck clothing or uncovering the wound in a CBRN environment could cause additional harm."],
+  evacText:"Evacuation wording for this chapter was not retrieved."},
+ {id:"bleed",name:"Bleeding from an extremity",ch:"Ch 6",ref:"¶ 6-3 to 6-7",evac:"na",fid:"v",
+  signs:[["bleedlimb","Bleeding of an extremity"],["bleedlife","Bleeding judged life threatening"],["trauma"]],
+  steps:["If the bleeding is life threatening, apply a tourniquet immediately: place it 2 to 3 inches above the wound and twist the windlass until the bleeding stops.","Mark a “T” and the time of application on the casualty.","Otherwise: place sterile gauze or a dressing over the site and apply direct pressure with fingertips, palm or the whole hand.","Apply a pressure dressing, white side (sterile, nonadherent pad) down, firmly enough to prevent slipping.","Once bleeding is controlled, check a distal pulse to make sure the dressing is not too tight."],
+  cautions:["Loosen the emergency bandage if the skin beyond the injury becomes cool, blue, numb, or pulseless."],
+  evacText:"Evacuation wording for this chapter was not retrieved."},
+ {id:"burnT",name:"Thermal burn",ch:"Ch 7",ref:"¶ 7-1 to 7-6",evac:"aid",fid:"v",
+  signs:[["heatsrc"],["burned"],["blisters"],["burnpain"]],
+  steps:["Remove the casualty from the source of the burn.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
+  cautions:["Do not attempt to remove clothing that is stuck to the wound.","Do not break blisters.","Do not apply grease or ointments to the burns."],
+  evacText:"Seek medical aid.",
+  note:"The manual describes kinds of burns rather than listing signs; the signs here are inferred from the chapter's cautions."},
+ {id:"burnE",name:"Electrical burn",ch:"Ch 7",ref:"¶ 7-2 to 7-6",evac:"aid",fid:"v",
+  signs:[["elec"],["burned"]],
+  steps:["Turn the electricity off, if the switch is nearby.","Otherwise use nonconductive material (rope, clothing, or dry wood) to drag the casualty away from the source.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
+  cautions:["Do not touch the casualty or the electrical source with your bare hands. You will be injured too!","Do not break blisters or apply grease or ointments."],
+  evacText:"Seek medical aid."},
+ {id:"burnC",name:"Chemical burn",ch:"Ch 7",ref:"¶ 7-2 to 7-6",evac:"aid",fid:"v",
+  signs:[["chem"],["burned"],["burnpain"]],
+  steps:["Remove liquid chemicals by flushing with as much water as possible.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
+  cautions:["Do not break blisters or apply grease or ointments."],
+  evacText:"Seek medical aid."},
+ {id:"fracture",name:"Fracture, dislocation or sprain",ch:"Ch 13",ref:"¶ 13-3 to 13-24",evac:"evac",fid:"s",
+  signs:[["trauma"],["deform","Deformity"],["swelltender","Tenderness, swelling, pain"],["cantmove","Inability to move the injured part"],["bone","Bone protruding through the skin"],["bleedlimb","Bleeding"],["discolor","Skin discoloration at the injury site"]],
+  steps:["Treat more serious injuries first.","Remove jewelry and expose the site; check distal pulse and capillary refill.","Immobilize with a rigid or formable splint, padded, with cravats tied above and below the fracture.","Make sure the splint stops movement without impairing circulation; recheck distal pulse after splinting.","Arm injuries: add a sling and swathe.","Observe for shock and treat if needed; recheck the pulse periodically."],
+  cautions:["Femur: do not move the casualty unless leaving them would cause greater injury; never straighten the limb or apply traction. “A fractured femur is a medical emergency.”","No distal pulse: one gentle in-line traction attempt; if the pulse does not return, splint in the most comfortable position and evacuate immediately.","Open fractures are contaminated and subject to infection."],
+  evacText:"Seek medical assistance and evacuate as soon as possible. If swelling occurs and the distal pulse is lost, evacuate immediately.",
+  note:"Dislocations and sprains are treated as closed fractures."},
+ {id:"widow",name:"Black widow spider bite",ch:"Ch 10",ref:"¶ 10-3, 10-12",evac:"aid",fid:"s",
+  signs:[["bite"],["dullache","Pinprick at the bite that becomes a dull ache"],["spasms","Severe painful muscle spasms"],["rigidab","Rigid, board-like abdomen"],["dizzy","Dizziness (severe cases)"],["nausea","Nausea (severe cases)"],["vomit","Vomiting (severe cases)"],["sob","Respiratory distress (severe cases)"]],
+  steps:GEN_BITE, evacText:"Seek medical aid. Treat for anaphylactic shock if necessary."},
+ {id:"recluse",name:"Brown recluse spider bite",ch:"Ch 10",ref:"¶ 10-4, 10-12",evac:"aid",fid:"s",
+  signs:[["bite"],["painless","Often painless at first; hours later bluish with a white border"],["bullseye","Red halo or bull's-eye; large ulcer within 7–10 days"]],
+  steps:GEN_BITE, evacText:"Seek medical aid."},
+ {id:"scorpH",name:"Scorpion sting (harmless species)",ch:"Ch 10",ref:"¶ 10-5, 10-12",evac:"aid",fid:"s",
+  signs:[["bite"],["sharppain","Sharp pain at the sting site; lasts 24–72 hours"]],
+  steps:GEN_BITE, evacText:"Seek medical aid."},
+ {id:"scorpD",name:"Scorpion sting (deadly species)",ch:"Ch 10",ref:"¶ 10-6, 10-12",evac:"aid",fid:"s",
+  signs:[["bite"],["sharppain","Sharp pain"],["tingle","“Pins and needles” sensation"],["spasms","Severe muscle contractions"],["drool","Drooling"],["incont","Incontinence"],["seizure","Seizures"]],
+  steps:GEN_BITE, evacText:"Seek medical aid.",
+  note:"The manual also lists hypertension and cardiac failure, which a first-aider can't enter as signs here."},
+ {id:"beeM",name:"Bee, wasp or hornet sting (mild reaction)",ch:"Ch 10",ref:"¶ 10-7",evac:"self",fid:"s",
+  signs:[["bite"],["sharppain","Pain at the site"],["localrs","Wheal, redness and swelling at the site"],["localitch","Itching"],["anxiety","Anxiety"]],
+  steps:GEN_BITE, cautions:["Watch for signs of anaphylaxis (manual warning, p. 10-2)."],
+  evacText:"No evacuation instruction is listed for a mild reaction."},
+ {id:"beeS",name:"Severe allergic reaction to a sting (anaphylaxis)",ch:"Ch 10",ref:"¶ 10-8, 10-14",evac:"imm",fid:"s",
+  signs:[["bite"],["hives","Generalized itching and hives"],["chesttight","Chest tightness"],["lips","Swelling of the lips and tongue"],["wheeze","Wheezing"],["sob","Shortness of breath, respiratory distress"],["abcramp","Abdominal cramps"]],
+  steps:["Treat the casualty for anaphylactic shock (Task 081-833-0003, Ch 22)."],
+  evacText:"If the casualty shows signs of an allergic reaction, begin transport immediately.",
+  note:"Ch 22 (anaphylactic shock treatment) was not retrieved for this test."},
+ {id:"fireant",name:"Fire ant stings",ch:"Ch 10",ref:"¶ 10-9, 10-12",evac:"aid",fid:"s",
+  signs:[["bite"],["burnpain","Intense, burning pain"],["circle","Bites in a circular pattern"],["blisters","Painful fluid-filled blisters within minutes"],["localrs","Large local reaction, possibly the whole limb"]],
+  steps:GEN_BITE, cautions:["Anaphylactic shock is possible."], evacText:"Seek medical aid."},
+ {id:"tick",name:"Tick bite",ch:"Ch 10",ref:"¶ 10-10, 10-13",evac:"aid",fid:"s",
+  signs:[["tick"],["localitch","Itching at the site"],["localrs","Redness at the site"],["headache","Headache"],["fever","Fever"],["jointpain","Joint or leg pain"],["nodes","Swollen lymph nodes"],["paralysis","Paralysis or other nervous system problems after several days"]],
+  steps:["Remove all parts of the tick: grasp it as close to the skin as possible with tweezers and pull straight out with steady pressure.","Wash the area with saline or clean water and soap.","Monitor vital signs."],
+  evacText:"Seek medical aid."},
+ {id:"insect",name:"Unknown insect bite or sting",ch:"Ch 10",ref:"¶ 10-11, 10-14",evac:"aid",fid:"s",
+  signs:[["bite"],["sharppain","Pain at the site"],["localrs","Swelling at the site"],["sob","Breathing difficulty"]],
+  steps:["Cleanse the site with antiseptic.","Treat for anaphylactic shock if necessary."],
+  evacText:"Seek medical aid."}
+];
+
+const EVAC = {imm:["Evacuate immediately","t-imm",0],evac:["Evacuate","t-evac",1],aid:["Seek medical aid","t-aid",2],self:["No evacuation listed","t-self",3],na:["Not retrieved","t-na",4]};
+const SOFT = {imm:"--imm-soft",evac:"--evac-soft",aid:"--aid-soft",self:"--self-soft",na:"--na-soft"};
+
+// IDF-style weights: rarer signs count more
+const df = {}; C.forEach(c=>new Set(c.signs.map(x=>x[0])).forEach(k=>df[k]=(df[k]||0)+1));
+const N = C.length, W = k => Math.log(1 + N/(df[k]||N));
+
+// ---------- State ----------
+const EXAMPLE = ["hot","dizzy","headache","nausea","coolsweat"];
+let sel = new Set(EXAMPLE), current = null, isExample = true;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderChips(){
+  const q = $("q").value.trim().toLowerCase();
+  const groups = {};
+  S.forEach(s=>{ if(!df[s.id]) return; if(q && !s.label.toLowerCase().includes(q)) return; (groups[s.group]=groups[s.group]||[]).push(s); });
+  $("groups").innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([g,list])=>
+    `<div class="group"><h3>${esc(g)}</h3><div class="chips">${list.map(s=>
+      `<button type="button" class="chip${s.ctx?" ctx":""}" data-id="${s.id}" aria-pressed="${sel.has(s.id)}">${esc(s.label)}</button>`).join("")}</div></div>`).join("")
+    : `<div class="placeholder">No sign matches “${esc(q)}”.</div>`;
+  $("selected").innerHTML = sel.size ? [...sel].map(id=>
+    `<button type="button" class="chip${SBY[id].ctx?" ctx":""}" aria-pressed="true" data-id="${id}" aria-label="Remove ${esc(SBY[id].label)}">${esc(SBY[id].label)}<span class="x" aria-hidden="true">×</span></button>`).join("")
+    : `<span class="empty">Nothing selected yet.</span>`;
+  $("exampleNote").hidden = !isExample;
+}
+
+function rank(){
+  const U = [...sel]; if(!U.length) return [];
+  const wU = U.reduce((a,k)=>a+W(k),0);
+  return C.map(c=>{
+    const keys = [...new Set(c.signs.map(x=>x[0]))];
+    const hit = keys.filter(k=>sel.has(k));
+    if(!hit.length) return null;
+    const wHit = hit.reduce((a,k)=>a+W(k),0), wC = keys.reduce((a,k)=>a+W(k),0);
+    const P = wHit/wU, R = wHit/wC, score = 2*P*R/(P+R);
+    return {c,hit,keys,P,R,score};
+  }).filter(Boolean).sort((a,b)=> (b.score-a.score) || (EVAC[a.c.evac][2]-EVAC[b.c.evac][2]));
+}
+
+function renderRank(){
+  const r = rank();
+  $("rankEmpty").hidden = r.length>0 || sel.size>0 ? r.length>0 : false;
+  if(!sel.size){ $("rankEmpty").hidden=false; $("causes").innerHTML=""; $("count").textContent=""; }
+  else if(!r.length){ $("rankEmpty").hidden=true; $("causes").innerHTML=`<li class="placeholder">No condition in the retrieved chapters lists these signs.</li>`; $("count").textContent=""; }
+  else{
+    $("rankEmpty").hidden=true;
+    $("count").textContent = r.length + (r.length===1?" match":" matches");
+    $("causes").innerHTML = r.map((x,i)=>{
+      const e = EVAC[x.c.evac], pct = Math.round(x.score*100);
+      const missing = x.keys.filter(k=>!sel.has(k) && !SBY[k].ctx).slice(0,3).map(k=>SBY[k].label.toLowerCase());
+      return `<li><button type="button" class="cause" data-id="${x.c.id}" aria-current="${current===x.c.id}">
+        <span class="crow"><span class="cname"><span class="rank">${i+1}</span>${esc(x.c.name)}</span><span class="pct">${pct}</span></span>
+        <span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        <span class="crow"><span class="why">Explains <em>${Math.round(x.P*100)}%</em> of your entries · matches <em>${Math.round(x.R*100)}%</em> of its signs</span><span class="tag ${e[1]}">${e[0]}</span></span>
+        ${missing.length?`<span class="why">Also look for: ${esc(missing.join(", "))}</span>`:""}
+      </button></li>`;}).join("");
+  }
+  // life-threat cues
+  const reds = [...sel].filter(k=>SBY[k].red);
+  $("redflag").innerHTML = reds.length ? `<div class="redflag"><b>Life-threat signs entered:</b> ${esc(reds.map(k=>SBY[k].label.toLowerCase()).join(", "))}. Deal with airway, breathing and bleeding before working through this list.</div>` : "";
+  // respiratory note (source coverage)
+  const resp = ["wheeze","sob","chesttight"].some(k=>sel.has(k));
+  $("respNote").hidden = !resp;
+  $("respNote").textContent = "Breathing signs: TC 4-02.1 has no asthma chapter, so wheezing here can only match choking or sting reactions.";
+  if(current && !r.find(x=>x.c.id===current)) current = null;
+  if(!current && r.length) current = r[0].c.id;
+  renderTx();
+  document.querySelectorAll(".cause").forEach(b=>b.setAttribute("aria-current", b.dataset.id===current));
+}
+
+function renderTx(){
+  const c = C.find(x=>x.id===current);
+  if(!c){ $("tx").innerHTML = `<div class="placeholder">Select a cause to see its first aid steps, cautions and evacuation guidance.</div>`; return; }
+  const e = EVAC[c.evac];
+  const signs = c.signs.filter(s=>!SBY[s[0]].ctx).map(s=>`<span class="sign${sel.has(s[0])?" hit":""}">${esc(s[1]||SBY[s[0]].label)}</span>`).join("");
+  $("tx").innerHTML = `
+    <div class="sec" style="gap:6px"><h3>${esc(c.name)}</h3>
+      <div class="meta"><span class="ref">TC 4-02.1 ${esc(c.ch)} · ${esc(c.ref)}</span><span class="tag ${e[1]}">${e[0]}</span></div></div>
+    <div class="sec"><h4>Signs in the manual (yours highlighted)</h4><div class="signs">${signs||'<span class="why">The manual lists no signs for this entry.</span>'}</div></div>
+    <div class="sec"><h4>First aid</h4><ol>${c.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
+    ${c.cautions?`<div class="sec caut"><h4>Cautions</h4><ul>${c.cautions.map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`:""}
+    <div class="sec"><h4>Evacuation</h4><div class="evacbox" style="background:var(${SOFT[c.evac]})">${esc(c.evacText)}</div></div>
+    ${c.note?`<div class="why">${esc(c.note)}</div>`:""}
+    <div class="fid">${c.fid==="v"?"Wording: short excerpts from the manual (Soldier/casualty language kept).":"Wording: a close summary of the manual's text, not a verbatim quote."}</div>`;
+}
+
+function toggle(id){ isExample=false; sel.has(id)?sel.delete(id):sel.add(id); renderChips(); renderRank(); }
+$("groups").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) toggle(b.dataset.id);});
+$("selected").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) toggle(b.dataset.id);});
+$("causes").addEventListener("click",e=>{const b=e.target.closest(".cause"); if(!b) return; current=b.dataset.id; renderTx(); document.querySelectorAll(".cause").forEach(x=>x.setAttribute("aria-current",x.dataset.id===current)); if(window.innerWidth<=980) $("h-tx").scrollIntoView({behavior:"smooth",block:"start"});});
+$("q").addEventListener("input",renderChips);
+$("clear").addEventListener("click",()=>{sel.clear(); isExample=false; current=null; $("q").value=""; renderChips(); renderRank();});
+renderChips(); renderRank();
+})();
+</script>
+
+<script>
+(function(){
+  var el=document.getElementById('offline');
+  if(!('serviceWorker' in navigator)){ el.textContent='Offline use not supported in this browser'; return; }
+  navigator.serviceWorker.register('sw.js').then(function(){ return navigator.serviceWorker.ready; })
+    .then(function(){ el.textContent='Ready to use offline'; })
+    .catch(function(){ el.textContent='Offline use unavailable (needs https)'; });
+})();
+</script>
+</body>
+</html>
