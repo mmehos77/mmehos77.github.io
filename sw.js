@@ -1,6 +1,6 @@
 // Offline cache for the Symptom Sorter. Change VERSION whenever any file changes,
 // so installed copies pick up the update the next time they're opened with a signal.
-const VERSION = 'sorter-v3';
+const VERSION = 'sorter-v6';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

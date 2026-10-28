@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TC 4-02.1 Symptom Sorter</title>
+<title>Army First Aid Symptom Sorter</title>
 
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
@@ -111,12 +111,12 @@ details .body ul{margin:0;padding-left:1.1rem}
 
 <div class="wrap">
   <header>
-    <h1>TC 4-02.1 Symptom Sorter</h1>
+    <h1>Army First Aid Symptom Sorter</h1>
     <span class="src" id="offline" aria-live="polite">Checking offline support…</span>
-    <span class="src">Source: Army TC 4-02.1 <i>First Aid</i>, 2016 (C2, 2018) · public release, distribution unlimited</span>
+    <span class="src">Source: Army ATP 4-02.11, March 2026 (supersedes TC 4-02.1) · public release, distribution unlimited</span>
   </header>
 
-  <div class="notice"><b>Design prototype.</b> Built from part of one Army manual to test the interface. The ranking is a simple, unvalidated match score. Do not use it to make decisions about a real casualty.</div>
+  <div class="notice"><b>Design prototype.</b> Built from one Army manual, ATP 4-02.11, to test the interface. The ranking is a simple, unvalidated match score. Do not use it to make decisions about a real casualty.</div>
 
   <div class="grid">
     <!-- 1. Inputs -->
@@ -158,15 +158,16 @@ details .body ul{margin:0;padding-left:1.1rem}
       </div>
       <div>
         <p><b>Situation chips</b> (dashed outline) are not signs listed in the manual. They come from each chapter's scope, such as "hot environment" for the heat illness chapter. They carry the same weight as signs.</p>
-        <p><b>Evacuation tags</b> repeat the manual's own wording: "Evacuate immediately", "Evacuate (as soon as possible)", "Seek medical aid", or no evacuation listed.</p>
+        <p><b>Evacuation tags</b> summarize the manual's wording: "Evacuate immediately" (MEDEVAC or immediate evacuation), "Medical help immediately", "Evacuate" (as soon as possible), "Seek medical aid", or "No evacuation required" (seek care only if symptoms worsen). The full wording is in each treatment panel.</p>
       </div>
       <div>
         <p><b>Not included</b></p>
         <ul>
-          <li>Ch 16–22 (head and abdominal injuries, impalement, snakebite, anaphylaxis treatment) could not be retrieved for this test.</li>
-          <li>Ch 9 (nerve agents) and Ch 24–27 (eye injuries) were left out as outside the test's scope.</li>
-          <li>Asthma: TC 4-02.1 has no asthma chapter.</li>
-          <li>Ch 10 and Ch 13 entries are close summaries of the manual's text. Other chapters use short verbatim excerpts.</li>
+          <li>Military and procedural chapters (Ch 1–3 casualty response and TCCC phases, Ch 15 monitoring and evacuation, Ch 19 CBRN, Ch 20 combat stress) and Ch 18 (sickle cell trait) are left out.</li>
+          <li>Scorpions get no signs or treatment in this manual, so they are left out. Centipede and millipede stings, which the manual calls minor, are left out too.</li>
+          <li>Tier 2 skills meant for trained combat lifesavers (needle decompression, detailed wound packing) are left out; pelvic fracture is included because falls can cause it.</li>
+          <li>Asthma: the manual mentions it only as a risk factor and gives no first aid for it.</li>
+          <li>Signs quote the manual, lightly trimmed; treatment steps are condensed from it, and bleeding steps draw on several chapters.</li>
         </ul>
       </div>
     </div>
@@ -178,168 +179,291 @@ details .body ul{margin:0;padding-left:1.1rem}
 // ---------- Sign vocabulary ----------
 // ctx:true = situation chip derived from chapter scope (not a listed sign). red:true = life-threat cue.
 const S = [
- // Situation
- ["hot","Hot environment or hard exertion","Situation",1],["cold","Exposed to cold","Situation",1],["wetfeet","Feet cold and wet for hours","Situation",1],
- ["water","Drank a large amount of water","Situation",0],["bite","Bitten or stung","Situation",1],["tick","Tick found attached","Situation",1],
- ["heatsrc","Contact with flame, hot liquid or hot object","Situation",1],["elec","Contact with electricity","Situation",1],["chem","Chemical on the skin","Situation",1],
- ["trauma","Fall, blow or other injury","Situation",1],["chestwound","Open wound to the chest","Situation",1,1],
- // Mental status
- ["dizzy","Dizziness","Mental status & general"],["headache","Headache","Mental status & general"],["weak","Weakness","Mental status & general"],
- ["confused","Confusion or mental status change","Mental status & general"],["combative","Combative","Mental status & general"],
- ["sleepy","Sleepy, apathetic or lethargic","Mental status & general"],["slurred","Slurred speech or mumbling","Mental status & general"],
- ["unconscious","Passed out (unconscious)","Mental status & general",0,1],["seizure","Convulsions or seizures","Mental status & general",0,1],
- ["anxiety","Anxiety","Mental status & general"],["appetite","Loss of appetite or poor food intake","Mental status & general"],
+ // Situation (from chapter scope; not listed signs)
+ ["hot","Hot environment or hard exertion","Situation",1],["cold","Exposed to cold or wet","Situation",1],["wetfeet","Feet cold and wet for hours","Situation",1],
+ ["water","Drank a large amount of water","Situation",1],["altitude","At high altitude (above about 8,000 ft)","Situation",1],["snowsun","Hours of bright sun on snow without sunglasses","Situation",1],
+ ["bite","Bitten or stung by an insect, spider or ant","Situation",1],["tick","Tick found attached","Situation",1],["snake","Bitten by a snake","Situation",1],
+ ["animal","Bitten by an animal or person","Situation",1],["marine","Stung or spiked by a sea creature","Situation",1],["allergen","Contact with something they're allergic to","Situation",1],
+ ["heatsrc","Contact with flame, hot liquid or hot object","Situation",1],["elec","Contact with electricity or lightning","Situation",1],["chem","Chemical on the skin","Situation",1],
+ ["trauma","Fall, blow or other injury","Situation",1],["headblow","Blow or injury to the head","Situation",1],
+ ["chestwound","Wound to the chest","Situation",1,1],["abdwound","Wound to the abdomen","Situation",1,1],["impaled","Object impaled in the body","Situation",1],
+ ["eyeobj","Something in or on the eye","Situation",1],["eyechem","Chemical splashed in the eye","Situation",1],["eyeblow","Blow or cut to the eye area","Situation",1],
+ // Mental status & general
+ ["dizzy","Dizziness, lightheaded or fainting","Mental status & general"],["headache","Headache or pressure in the head","Mental status & general"],["weak","Weakness","Mental status & general"],
+ ["fatigue","Fatigue or tiredness","Mental status & general"],["confused","Confusion, disorientation or altered mental state","Mental status & general"],
+ ["memory","Memory loss or trouble concentrating","Mental status & general"],["restless","Restless, agitated, combative or irritable","Mental status & general"],
+ ["sleepy","Sleepy, drowsy, apathetic or lethargic","Mental status & general"],["slurred","Slurred speech or mumbling","Mental status & general"],
+ ["coord","Clumsy, staggering or loss of coordination","Mental status & general"],["recentko","Recently unconscious","Mental status & general"],
+ ["unconscious","Unconscious or unresponsive","Mental status & general",0,1],["seizure","Convulsions or seizures","Mental status & general",0,1],
+ ["appetite","Loss of appetite","Mental status & general"],["thirst","Excessive thirst","Mental status & general"],["doom","Feeling of impending doom","Mental status & general"],
+ ["numbweak","Weakness, numbness or tingling in arms or legs","Mental status & general",0,1],["paralysis","Paralysis","Mental status & general",0,1],
+ // Head & eyes
+ ["headdeform","Deformity, depression or swelling of the head","Head & eyes",0,1],["earfluid","Clear fluid or blood from the nose or ears","Head & eyes",0,1],
+ ["blackeye","Bruising around the eyes (black eyes)","Head & eyes"],["pupils","Unequal pupils","Head & eyes",0,1],["vision","Blurred or double vision, or vision changes","Head & eyes"],
+ ["droopy","Drooping eyelids","Head & eyes"],["lightsens","Sensitivity to light or noise","Head & eyes"],["ringing","Ringing in the ears","Head & eyes"],
+ ["headwound","Wound or heavy bleeding on the head or scalp","Head & eyes"],
+ ["eyepain","Eye pain, redness or irritation","Head & eyes"],["gritty","Gritty feeling, as if something is in the eye","Head & eyes"],["tearing","Watering eye or can't keep it open","Head & eyes"],
+ ["lidswell","Swollen or cut eyelid","Head & eyes"],["bloodshot","Bloodshot eye","Head & eyes"],["eyebleed","Bleeding around or from the eye","Head & eyes"],
+ ["eyestuck","Object stuck in or protruding from the eye","Head & eyes"],["eyeout","Eye protruding from its socket","Head & eyes"],
  // Skin & temperature
- ["coolsweat","Sweaty but cool skin","Skin & temperature"],["pale","Pale or gray skin","Skin & temperature"],["hotdry","Hot, dry skin","Skin & temperature",0,1],
- ["shiver","Shivering or chills","Skin & temperature"],["normtemp","Normal to slightly raised temperature","Skin & temperature"],["fever","Fever","Skin & temperature"],
- ["hives","Itching or hives all over","Skin & temperature"],["burned","Burned skin","Skin & temperature"],
+ ["coolsweat","Heavy sweating, or sweaty, cool, clammy skin","Skin & temperature"],["pale","Pale or gray skin","Skin & temperature"],
+ ["hotdry","Hot, dry skin (not sweating)","Skin & temperature",0,1],["hightemp","Very high body temperature (above 104°F)","Skin & temperature",0,1],
+ ["shiver","Shivering","Skin & temperature"],["coldpale","Cold, pale or bluish skin","Skin & temperature"],["fever","Fever or flu-like illness","Skin & temperature"],
+ ["hives","Hives or widespread skin redness","Skin & temperature"],["rash","Rash, possibly target-shaped or spreading","Skin & temperature"],
+ ["burned","Burned skin, red and painful","Skin & temperature"],["charred","Burn that is white, blackened or charred, or has no feeling","Skin & temperature",0,1],
+ ["swellext","Swelling in the hands, feet or legs","Skin & temperature"],
  // Breathing & pulse
- ["rapidbr","Rapid breathing","Breathing & pulse"],["slowbr","Slow or shallow breathing","Breathing & pulse"],
- ["wheeze","Wheezing","Breathing & pulse"],["sob","Shortness of breath or respiratory distress","Breathing & pulse",0,1],["chesttight","Chest tightness","Breathing & pulse"],
- ["cough","Can speak or cough forcefully","Breathing & pulse"],["silentcough","Silent cough, poor air exchange","Breathing & pulse",0,1],
- ["lips","Swelling of lips and tongue","Breathing & pulse",0,1],["weakpulse","Weak pulse","Breathing & pulse"],["rapidpulse","Rapid pulse","Breathing & pulse"],
+ ["rapidbr","Rapid breathing","Breathing & pulse"],["slowbr","Slow, shallow or irregular breathing","Breathing & pulse"],
+ ["wheeze","Wheezing","Breathing & pulse"],["stridor","High-pitched sounds when breathing or coughing","Breathing & pulse",0,1],
+ ["sob","Difficulty breathing or shortness of breath","Breathing & pulse",0,1],["cough","Can speak or cough forcefully","Breathing & pulse"],
+ ["silentcough","Can't speak, cough or breathe","Breathing & pulse",0,1],["cyan","Bluish lips, fingertips or skin","Breathing & pulse",0,1],
+ ["lips","Swelling of the face, lips, tongue or throat","Breathing & pulse",0,1],
+ ["sucking","Sucking or hissing sound from a chest wound","Breathing & pulse",0,1],["froth","Froth or bubbles at a chest wound","Breathing & pulse"],
+ ["coughblood","Coughing up blood or blood-tinged spit","Breathing & pulse",0,1],
+ ["weakpulse","Weak or absent pulse","Breathing & pulse"],["rapidpulse","Rapid heartbeat","Breathing & pulse"],
  // Stomach & urine
- ["nausea","Nausea","Stomach & urine"],["vomit","Vomiting","Stomach & urine"],["abcramp","Abdominal cramps","Stomach & urine"],
- ["rigidab","Rigid, board-like abdomen","Stomach & urine"],["bloated","Abdomen distended or bloated","Stomach & urine"],
- ["drool","Drooling","Stomach & urine"],["incont","Incontinence","Stomach & urine"],["clearurine","Large amounts of clear urine","Stomach & urine"],
+ ["nausea","Nausea","Stomach & urine"],["vomit","Vomiting","Stomach & urine"],["repvomit","Repeated vomiting","Stomach & urine",0,1],
+ ["abcramp","Abdominal cramps or pain","Stomach & urine"],["organs","Organs protruding from a wound","Stomach & urine",0,1],
+ ["diarrhea","Diarrhea","Stomach & urine"],["drool","Increased drooling or sweating","Stomach & urine"],
  // Muscles, bones, bleeding
- ["cramps","Muscle cramps","Muscles, bones & bleeding"],["spasms","Severe muscle spasms or contractions","Muscles, bones & bleeding"],
- ["deform","Deformity","Muscles, bones & bleeding"],["swelltender","Swelling, tenderness or pain at an injury","Muscles, bones & bleeding"],
- ["cantmove","Unable to move the injured part","Muscles, bones & bleeding"],["bone","Bone protruding through skin","Muscles, bones & bleeding"],
- ["discolor","Skin discoloration at the injury","Muscles, bones & bleeding"],["jointpain","Joint or leg pain","Muscles, bones & bleeding"],
- ["bleedlimb","Bleeding from an arm or leg","Muscles, bones & bleeding"],["bleedlife","Life-threatening bleeding","Muscles, bones & bleeding",0,1],
- // Local: cold
+ ["cramps","Muscle cramps or spasms","Muscles, bones & bleeding"],["swelltender","Marked swelling and significant pain at an injury","Muscles, bones & bleeding"],
+ ["snap","Heard or felt a “snap”","Muscles, bones & bleeding"],["deform","Limb looks deformed or a different length","Muscles, bones & bleeding"],
+ ["crepitus","Crackling or grating under the skin","Muscles, bones & bleeding"],["pulseloss","Loss of pulse or feeling beyond an injury","Muscles, bones & bleeding",0,1],
+ ["bone","Bone protruding through skin","Muscles, bones & bleeding"],["pelvicpain","Pain, bruising or instability at the pelvis","Muscles, bones & bleeding",0,1],
+ ["bleedlimb","Bleeding from an arm or leg","Muscles, bones & bleeding"],["bleedlife","Pulsing or steady bleeding, soaked clothes or pooling blood","Muscles, bones & bleeding",0,1],
+ ["amputation","Traumatic amputation","Muscles, bones & bleeding",0,1],
+ // At the site (cold)
  ["numb","Numbness or loss of sensation","At the site (cold)"],["tingle","Tingling or “pins and needles”","At the site (cold)"],
- ["waxy","Pale, yellowish, waxy skin","At the site (cold)"],["wooden","Tissue feels wooden (frozen)","At the site (cold)"],
- ["rewarmpain","Severe pain after rewarming","At the site (cold)"],["hotshoot","Cold feet turning hot with shooting pains","At the site (cold)"],
- ["edema","Severe swelling of feet","At the site (cold)"],["itchlesion","Swollen, itchy, painful patches after cold","At the site (cold)"],
- // Local: bite / sting / burn
- ["sharppain","Sharp pain at the site","At the site (bite, sting, burn)"],["burnpain","Intense burning pain at the site","At the site (bite, sting, burn)"],
- ["dullache","Pinprick that becomes a dull ache","At the site (bite, sting, burn)"],["painless","Painless bite, later bluish with white border","At the site (bite, sting, burn)"],
- ["bullseye","Red halo or bull's-eye, later an ulcer","At the site (bite, sting, burn)"],["localrs","Redness, swelling or welt at the site","At the site (bite, sting, burn)"],
- ["localitch","Itching at the site","At the site (bite, sting, burn)"],["circle","Bites in a circular pattern","At the site (bite, sting, burn)"],
- ["blisters","Blisters at the site","At the site (bite, sting, burn)"],["nodes","Swollen lymph nodes","At the site (bite, sting, burn)"],
- ["paralysis","Paralysis developing over days","At the site (bite, sting, burn)",0,1]
+ ["waxy","Hard or waxy-looking skin","At the site (cold)"],["blacktissue","Blackened tissue","At the site (cold)"],
+ ["rewarmpain","Pain or burning as the area rewarms","At the site (cold)"],["redfeet","Red, swollen feet","At the site (cold)"],
+ ["footodor","Foul-smelling feet, blisters or open sores","At the site (cold)"],["itchburn","Itching or burning skin after cold","At the site (cold)"],
+ ["purple","Bluish or purplish patches, dry or cracked skin","At the site (cold)"],
+ // At the site (bite, sting, burn)
+ ["localpain","Pain at the site","At the site (bite, sting, burn)"],["burnpain","Severe burning pain at the site","At the site (bite, sting, burn)"],
+ ["localrs","Redness, swelling or a raised bump at the site","At the site (bite, sting, burn)"],["localitch","Itching at the site","At the site (bite, sting, burn)"],
+ ["fangs","Fang marks with discoloration and swelling within 5 to 10 minutes","At the site (bite, sting, burn)"],
+ ["blisters","Blisters at the site","At the site (bite, sting, burn)"],["ulcer","Sore that turns into an ulcer","At the site (bite, sting, burn)"],
+ ["multistings","Many stings at once","At the site (bite, sting, burn)"],["nodes","Swollen lymph nodes","At the site (bite, sting, burn)"],
+ ["openwound","Bite wound or torn skin","At the site (bite, sting, burn)"]
 ].map(a=>({id:a[0],label:a[1],group:a[2],ctx:!!a[3],red:!!a[4]}));
 const SBY = Object.fromEntries(S.map(s=>[s.id,s]));
 
-// ---------- Conditions (from TC 4-02.1) ----------
-// evac: imm | evac | aid | self | na   ·   fid: v = short verbatim excerpts, s = close summary of the manual text
-const GEN_BITE = ["Keep the casualty calm and reassured; limit activity.","Keep the body immobilized.","Remove jewelry.","Gently cleanse the site with saline or the cleanest water available and soap.","Apply a cold pack.","Monitor vital signs."];
+// ---------- Conditions (from ATP 4-02.11, March 2026) ----------
+// evac: imm | now | evac | aid | self   ·   fid: v = the manual's wording (lightly trimmed), s = condensed from the manual's text
+const INSECT_STEPS = ["Remove the stinger, if any, as quickly as possible: scrape it off with a blunt edge such as a card or fingernail. Avoid squeezing the venom sac.","Wash the bite area with mild soap and water. Be gentle and avoid excessive scrubbing.","Apply a cold compress or an ice pack wrapped in a cloth, 10 to 15 minutes at a time, several times a day.","Over-the-counter hydrocortisone, calamine or antihistamine creams can relieve itching; an oral antihistamine can help if itching or swelling persists (follow the package directions).","Avoid scratching.","Monitor for severe reactions (anaphylaxis): difficulty breathing, dizziness, swelling of the face or throat, or a widespread rash."];
+const SNAKE_STEPS = ["Stay calm and call for medical assistance immediately. Give information about the snake if possible, but do not try to capture or kill it.","Keep the casualty as still and calm as possible; restrict movement and avoid exertion.","Remove jewelry, tight clothing and other constricting items from the affected area.","Position the bitten limb slightly below the level of the heart, if possible.","Cleanse the wound gently with mild soap and water.","Apply a sterile bandage or dressing over the bite, snug but not too tight.","Monitor breathing and heart rate; be prepared to give CPR. On the way to care, watch for an allergic reaction, check the pulse beyond the bite, treat for shock and conserve body heat."];
+const SNAKE_CAUT = ["Do not apply ice or use a tourniquet; they are not effective and can cause additional harm.","Do not cut open the bite or suck out the venom.","Do not try to identify or kill the snake. Freshly killed snakes can still bite by reflex; medical staff treat by region, not by species guess.","Venomous snakes do not always inject venom, and all snakes may carry tetanus: anyone bitten should seek medical attention immediately."];
+const HEAD_STEPS = ["Stabilize the head by hand: hands on each side of the head, keeping it in line with the body.","Assess level of consciousness (AVPU): Alert? Responds to Verbal commands? Responds to Pain? Unresponsive?","Be ready to clear the airway (jaw-thrust maneuver), control external bleeding, treat for shock, keep the casualty warm, and protect the wound.","Superficial injury: apply a dressing and observe for abnormal behavior or complications.","If seizures occur: ease the casualty to the ground, support the head and neck, keep the airway open, and protect them from nearby objects.","Monitor level of consciousness, pupils (react to light and equal in size), and strength, movement, coordination and sensation."];
+const HEAD_CAUT = ["Treat casualties with blunt trauma as though they also have a spinal injury. Do not move them until the head and neck are stabilized unless they are in immediate danger.","Do not remove a protruding object from the head or give anything to eat or drink.","Do not apply a pressure dressing or push brain matter back into the skull.","During a seizure, do not forcefully hold the arms and legs or force anything between the teeth.","Report these signs to medical personnel at once: worsening consciousness, double vision, increasing restlessness or agitation, repeated vomiting, seizures, weakness or tingling in the limbs, severe or worsening headache (¶ 11-24)."];
+const HEAD_EVAC = "Request medical assistance and evacuation; transport to medical care as soon as the situation permits. Casualties with these symptoms should be evacuated as soon as possible.";
+const EYE_SHIELD = "Cover the injured eye with a rigid eye-shield, or anything that gives a hard cover (goggles, sunglasses, the bottom of a foam, plastic or paper cup). Secure it with tape from cheek to forehead, or gauze, cloth, shoelace or string.";
+const EYE_CAUT = ["Do not put pressure on the eye or remove anything from the eye surface.","Never place anything under the rigid eye-shield or directly on the eye.","Shield only the injured eye unless both are injured; covering both makes a walking casualty a litter casualty (¶ 10-7)."];
+const BURN_ALL = ["Monitor for life-threatening conditions, check for other injuries, and treat for shock if needed.","Cool and clean the burn with available clean water; do not use ice.","Cover burns with gauze or clean cloth. Elastic or tight bandages are normally not used on burns.","Prevent hypothermia: keep the casualty off the ground on an insulated surface and covered, whatever the weather.","Over-the-counter pain relievers may be given if it is safe to do so."];
+const BURN_CAUT = ["Facial burns, especially in a closed space, may come with an inhalation injury. Watch the airway closely.","The larger the burned area, the higher the risk of hypothermia. Estimate size with the casualty's palm (about 1%) or the Rule of Nines."];
+
 const C = [
- {id:"heatex",name:"Heat exhaustion",ch:"Ch 11",ref:"¶ 11-4, 11-5",evac:"aid",fid:"v",
-  signs:[["hot"],["dizzy","Dizziness."],["headache","Headache."],["appetite","Loss of appetite."],["nausea","Nausea."],["weak","Weakness."],["coolsweat","Profuse sweating and pale (or gray), moist cool skin."],["pale"],["normtemp","Normal to slightly elevated body temperature."],["cramps","Muscle cramps."]],
-  steps:["Rest Soldier in shade.","Loosen uniform and remove head gear.","Have Soldier drink 2 quarts of water over 1 hour."],
-  evacText:"Seek medical aid. Evacuate if no improvement in 30 minutes, or if Soldier's condition worsens."},
- {id:"heatstroke",name:"Heat stroke",ch:"Ch 11",ref:"¶ 11-7 to 11-9",evac:"imm",fid:"v",
-  signs:[["hot"],["hotdry","Hot dry skin."],["headache","Headache."],["seizure","Convulsions and chills."],["shiver"],["dizzy","Dizziness."],["nausea","Nausea."],["weak","Weakness."],["weakpulse","Pulse and respirations are weak and rapid"],["rapidbr"],["rapidpulse"],["vomit","Vomiting."],["confused","Confusion, mumbling"],["slurred"],["combative","Combative."],["unconscious","Passing out (unconscious)."]],
-  steps:["Immediately begin cooling the Soldier off.","Cool the casualty with any means available, even before removing clothes.","Rapidly cool by immersing the casualty in cold water.","Place ice packs, if available, in groin, axillae (armpits) and around the neck.","Fan the entire body."],
-  cautions:["Stop cooling if casualty starts shivering.","Give nothing by mouth."],
-  evacText:"The casualty must be evacuated to the nearest medical treatment facility as soon as possible. Evacuate immediately, and continue cooling during transport."},
- {id:"hypona",name:"Hyponatremia (water intoxication)",ch:"Ch 11",ref:"¶ 11-11, 11-12",evac:"imm",fid:"v",
-  signs:[["hot"],["confused","Mental status changes."],["vomit","Vomiting."],["water","History of consumption of large volume of water."],["appetite","Poor food intake."],["bloated","Abdomen distended/bloated."],["clearurine","Large amounts of clear urine."]],
-  steps:["If awake, allow Soldier to consume salty foods or snacks."],
-  cautions:["Do not give more water or intravenous fluids."],
-  evacText:"Seek medical aid. Evacuate immediately."},
- {id:"hypothermia",name:"Hypothermia",ch:"Ch 12",ref:"¶ 12-5 to 12-7",evac:"evac",fid:"v",
-  signs:[["cold"],["shiver","Vigorous shivering is typically present; may decrease or cease as core temperature falls."],["sleepy","Conscious, but usually apathetic or lethargic. Sleepiness."],["confused","Confusion."],["slurred","Slurred speech."],["slowbr","Shallow breathing. Very slow respirations."],["weakpulse","Weak pulse."]],
-  steps:["Remove the casualty from the cold environment.","Replace wet clothing with dry clothing.","Cover the casualty with insulating material or blanket.","Wrap the casualty from head to toe.","If casualty is conscious, slowly give high caloric sweet warm fluids."],
-  cautions:["Avoid unnecessary movement of the casualty."],
-  evacText:"Seek medical aid. Evacuate as soon as possible with the casualty lying down.",
-  note:"Field goals per the manual: rescue, examine, insulate, and rapidly transport."},
- {id:"frostbite",name:"Frostbite",ch:"Ch 12",ref:"¶ 12-10, 12-12",evac:"evac",fid:"v",
-  signs:[["cold"],["numb","Numbness in affected area."],["tingle","Tingling, blistered, swollen, or tender areas."],["blisters"],["waxy","Pale, yellowish, waxy-looking skin (grayish in dark-skinned soldiers)."],["wooden","Frozen tissue that feels wooden to the touch."],["rewarmpain","Significant pain after rewarming"]],
-  steps:["Local rewarming at room temperature or using body heat.","Loosen or remove constricting clothing and remove jewelry.","Move the casualty to a sheltered area, if possible.","Protect the affected area from further cold or trauma."],
-  cautions:["Avoid exposure to excessive heat (open flame, stove tops, steam, heat packs) or rubbing affected tissue."],
-  evacText:"Seek medical aid. Evacuate the casualty."},
- {id:"immersion",name:"Immersion foot (trench foot)",ch:"Ch 12",ref:"¶ 12-21, 12-22",evac:"evac",fid:"v",
-  signs:[["cold"],["wetfeet"],["hotshoot","Cold, numb feet that may progress to hot with shooting pains."],["numb","Loss of sensation."],["edema","Severe edema and gangrene. Loss of tissue."]],
-  steps:["Remove wet or constrictive clothing, gently wash and dry affected extremities.","Elevate affected limbs and cover with layers of loose, warm, dry clothing."],
-  cautions:["Do not pop blisters, apply lotions or creams, massage, expose to extreme heat or permit Soldiers to walk."],
-  evacText:"Seek medical attention. Evacuate for medical treatment."},
- {id:"chilblain",name:"Chilblain",ch:"Ch 12",ref:"¶ 12-18, 12-19",evac:"self",fid:"v",
-  signs:[["cold"],["itchlesion","Chilblain lesions are swollen, tender, itchy and painful."],["burnpain","An itching or burning sensation may continue for several hours after exposure."]],
-  steps:["Rewarm affected area, keep warm and dry."],
-  evacText:"No evacuation instruction is listed for chilblain."},
- {id:"shock",name:"Shock",ch:"Ch 8",ref:"¶ 8-1 to 8-5",evac:"aid",fid:"v",
-  signs:[["coolsweat","Sweaty but cool skin."],["pale","Pale skin."],["confused","Confusion."],["rapidbr","Rapid breathing."]],
-  steps:["Lay the casualty on his back unless a sitting position will allow the casualty to breathe easier.","Elevate the casualty's feet higher than the heart using a stable object so the feet will not fall.","Calm and reassure: take charge, show self-confidence, and assure the casualty that he is being taken care of.","Watch the casualty closely for life-threatening conditions and check for other injuries, if necessary."],
-  evacText:"Seek medical aid.",
-  note:"The retrieved text gave four signs; the manual's full list may be longer."},
- {id:"choke",name:"Airway obstruction (choking)",ch:"Ch 4",ref:"¶ 4-2 to 4-6",evac:"aid",fid:"v",
-  signs:[["cough","Mild: able to speak or cough forcefully."],["wheeze","Mild: may be wheezing between coughs."],["silentcough","Severe: poor air exchange, increased breathing difficulty, a silent cough."],["sob"]],
-  steps:["Severe obstruction: give abdominal thrusts, “quick backward and upward thrusts.”","Chest thrusts: “performed slowly and distinctly with the intent of relieving the obstruction.”","If the casualty becomes unresponsive, lay him down and then start mouth-to-mouth resuscitation procedures."],
-  evacText:"Seek medical aid.",
-  note:"The manual's steps for a mild obstruction were not retrieved for this test."},
- {id:"chest",name:"Open chest wound",ch:"Ch 5",ref:"¶ 5-1 to 5-4",evac:"na",fid:"v",
-  signs:[["chestwound","Open wound to the chest"],["trauma"]],
-  steps:["Apply gloves from casualty's IFAK.","Place gloved hand or back of hand over open chest wound to create temporary seal.","Instruct the casualty to fully exhale, then immediately place the vent of the commercial chest seal directly over the wound.","No commercial seal: place the inner surface of the outer wrapper or other occlusive material directly over the wound."],
-  cautions:["Removing stuck clothing or uncovering the wound in a CBRN environment could cause additional harm."],
-  evacText:"Evacuation wording for this chapter was not retrieved."},
- {id:"bleed",name:"Bleeding from an extremity",ch:"Ch 6",ref:"¶ 6-3 to 6-7",evac:"na",fid:"v",
-  signs:[["bleedlimb","Bleeding of an extremity"],["bleedlife","Bleeding judged life threatening"],["trauma"]],
-  steps:["If the bleeding is life threatening, apply a tourniquet immediately: place it 2 to 3 inches above the wound and twist the windlass until the bleeding stops.","Mark a “T” and the time of application on the casualty.","Otherwise: place sterile gauze or a dressing over the site and apply direct pressure with fingertips, palm or the whole hand.","Apply a pressure dressing, white side (sterile, nonadherent pad) down, firmly enough to prevent slipping.","Once bleeding is controlled, check a distal pulse to make sure the dressing is not too tight."],
-  cautions:["Loosen the emergency bandage if the skin beyond the injury becomes cool, blue, numb, or pulseless."],
-  evacText:"Evacuation wording for this chapter was not retrieved."},
- {id:"burnT",name:"Thermal burn",ch:"Ch 7",ref:"¶ 7-1 to 7-6",evac:"aid",fid:"v",
-  signs:[["heatsrc"],["burned"],["blisters"],["burnpain"]],
-  steps:["Remove the casualty from the source of the burn.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
-  cautions:["Do not attempt to remove clothing that is stuck to the wound.","Do not break blisters.","Do not apply grease or ointments to the burns."],
-  evacText:"Seek medical aid.",
-  note:"The manual describes kinds of burns rather than listing signs; the signs here are inferred from the chapter's cautions."},
- {id:"burnE",name:"Electrical burn",ch:"Ch 7",ref:"¶ 7-2 to 7-6",evac:"aid",fid:"v",
-  signs:[["elec"],["burned"]],
-  steps:["Turn the electricity off, if the switch is nearby.","Otherwise use nonconductive material (rope, clothing, or dry wood) to drag the casualty away from the source.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
-  cautions:["Do not touch the casualty or the electrical source with your bare hands. You will be injured too!","Do not break blisters or apply grease or ointments."],
+ {id:"heatex",name:"Heat exhaustion",ch:"Ch 17",ref:"¶ 17-9 to 17-13",evac:"aid",fid:"v",
+  signs:[["hot"],["coolsweat","Heavy sweating. Pale, cool, or clammy skin."],["pale"],["weak","Weaknesses and fatigue."],["fatigue"],["dizzy","Dizziness or lightheadedness. Feeling faint or fainting."],["headache","Headache."],["nausea","Nausea or vomiting."],["vomit"],["rapidbr","Rapid and shallow breathing."],["rapidpulse","Elevated heart rate."],["cramps","Muscle cramps."]],
+  steps:["Move the casualty out of the heat into shade or air conditioning.","Have them lie down with legs slightly elevated.","Give cool water or an electrolyte sports drink to sip. Avoid alcohol or caffeine.","Loosen or remove tight or unnecessary clothing. Apply cool, wet cloths, especially to the neck, face and armpits, and fan to aid evaporation.","Stay with them and watch their symptoms."],
+  cautions:["Heat exhaustion can progress to heat stroke. If they become disoriented, confused, or lose consciousness, call for medical assistance immediately.","Heat cramps (cramps of the arms, legs or abdomen) often come first and are an early warning."],
+  evacText:"If they do not improve within 30 minutes or their condition worsens, seek medical assistance immediately."},
+ {id:"heatstroke",name:"Heat stroke",ch:"Ch 17",ref:"¶ 17-14 to 17-17",evac:"imm",fid:"v",
+  signs:[["hot"],["confused","Altered mental state or confusion."],["headache","Headache, dizziness, or fainting."],["dizzy"],["nausea","Nausea or vomiting."],["vomit"],["sob","Difficulty breathing."],["hotdry","Hot, dry skin (lack of sweating)."],["hightemp","High body temperature (typically above 104°F or 40°C)."],["rapidpulse","Rapid and strong heartbeat."],["seizure","Seizures."]],
+  steps:["Move the casualty to a cooler location (shade or air conditioning) as quickly as possible.","Call for emergency assistance, including MEDEVAC.","Cool them rapidly: immerse in cold water, use ice cooling sheets, or apply cold water with wet towels or sponges. Fan while misting with cool water.","Monitor breathing, pulse and level of consciousness. Begin CPR if they stop breathing and have no pulse, if you are trained."],
+  cautions:["Heat stroke is a medical emergency. Rapid cooling is crucial to prevent organ damage.","The same person should watch the casualty during cooling and evacuation to spot changes."],
+  evacText:"Seek emergency medical help immediately, including MEDEVAC."},
+ {id:"hypona",name:"Hyponatremia (water intoxication)",ch:"Ch 17",ref:"¶ 17-18 to 17-20",evac:"now",fid:"v",
+  signs:[["water"],["hot"],["nausea","Nausea and vomiting."],["vomit"],["headache","Headache."],["confused","Confusion or altered mental state."],["fatigue","Fatigue and weakness."],["weak"],["seizure","Seizures."],["cramps","Muscle cramps or spasms."],["appetite","Loss of appetite."],["swellext","Swelling in the hands, feet, or legs."],["unconscious","Coma (in severe cases)."]],
+  steps:["Check for severe signs (seizures, loss of consciousness, difficulty breathing); if present, call emergency services immediately.","Move the casualty to a cool, shaded area.","If conscious and able to swallow, give small sips of an electrolyte drink such as a sports drink.","If awake, allow salty foods or snacks.","Monitor breathing, heart rate and level of consciousness; be prepared to give CPR."],
+  cautions:["Do not give more water. Additional water makes the casualty more hyponatremic.","Hyponatremia can be mistaken for heat stroke, and the treatment is very different."],
+  evacText:"Seek medical attention. Hyponatremia is a medical emergency that requires professional diagnosis and treatment."},
+ {id:"hypothermia",name:"Hypothermia",ch:"Ch 8, 17",ref:"¶ 8-6 to 8-10, 17-29 to 17-31",evac:"evac",fid:"v",
+  signs:[["cold"],["shiver","Vigorous shivering; it may decrease or stop as core temperature continues to fall."],["coldpale","Cold, pale, or blue-gray skin."],["sleepy","Conscious, but usually apathetic or lethargic. Sleepiness. Drowsiness."],["confused","Confusion and disorientation."],["slurred","Slurred speech or mumbling."],["coord","Change in behavior with poor control over body movements; clumsiness and lack of coordination."],["slowbr","Slow or irregular breathing."],["weakpulse","Weak or absent pulse."],["numb","Numbness or tingling in extremities (mild)."],["unconscious","Loss of consciousness (severe)."]],
+  steps:["Remove the casualty from the cold environment.","Replace wet clothing with dry clothing.","Cover with insulating material or a blanket, and wrap from head to toe (face uncovered). Put a barrier between the casualty and the ground.","Avoid unnecessary movement; handle gently.","If conscious, slowly give high-calorie, sweet, warm fluids."],
+  cautions:["Do not allow tobacco, alcohol or caffeinated drinks.","Moderate to severe hypothermia carries a risk of irregular heartbeat from “afterdrop” during rewarming. Monitor and handle gently.","Rewarming a severely hypothermic person should be done by medical professionals; focus on preventing further heat loss."],
+  evacText:"If untreated, hypothermia is a true medical emergency and requires evacuation. Evacuate as soon as possible with the casualty lying down.",
+  note:"Field goals per the manual: rescue, examine, insulate, and rapidly transport. Blood loss also causes hypothermia, even in warm weather."},
+ {id:"frostbite",name:"Frostbite",ch:"Ch 17",ref:"¶ 17-24 to 17-28",evac:"aid",fid:"v",
+  signs:[["cold"],["coldpale","Cold, pale, or bluish skin."],["numb","Numbness or a loss of sensation in the affected area."],["tingle","Tingling or a “pins and needles” sensation."],["waxy","Hard or waxy appearance of the skin."],["blisters","Swelling or blistering (in severe cases)."],["rewarmpain","Pain or a burning sensation (as the affected area rewarms)."],["blacktissue","Blackened or gangrenous tissue (in severe, untreated cases)."]],
+  steps:["Move the casualty out of the cold into a warm area as soon as possible.","Remove wet or constrictive clothing and accessories.","Gradually rewarm the area: immerse it in warm (not hot) water or use warm compresses.","Once thawed, cover with a sterile dressing or clean cloth and keep it elevated if possible.","Over-the-counter pain relievers such as ibuprofen can help, but consult a health care professional before giving medication."],
+  cautions:["Avoid direct heat (fires, heating pads); the casualty may not feel heat and could be burned.","Do not rub or massage the area.","Onset is often sudden blanching followed by brief tingling. Frostbite is indicated when the face, hands or feet stop hurting."],
+  evacText:"Seek medical attention. Even mild frostbite needs professional evaluation."},
+ {id:"trench",name:"Trench foot (immersion foot)",ch:"Ch 17",ref:"¶ 17-32 to 17-35",evac:"aid",fid:"v",
+  signs:[["wetfeet"],["cold"],["redfeet","Redness and swelling of the feet."],["numb","Numbness or tingling sensation."],["tingle"],["itchburn","Itching or a burning sensation."],["localpain","Pain or discomfort."],["footodor","Blisters or open sores. Foul odor."],["coldpale","Coldness and paleness of the skin."]],
+  steps:["Move the casualty to a warm, dry place.","Remove wet footwear and socks to let the feet dry.","Elevate the feet slightly.","Gently wash the feet with warm (not hot) water and mild soap, and pat dry.","Put on clean, dry, loose socks."],
+  cautions:["Do not rub or massage the feet.","Do not use direct heat (fires, heaters, heating pads); numb feet burn easily."],
+  evacText:"Seek medical evaluation and treatment."},
+ {id:"chilblain",name:"Chilblains",ch:"Ch 17",ref:"¶ 17-39 to 17-42",evac:"self",fid:"v",
+  signs:[["cold"],["localrs","Redness and inflammation. Swelling and tenderness."],["itchburn","Itching or a burning sensation."],["purple","Skin discoloration (bluish or purplish). Dry or cracked skin."],["blisters","Small, fluid-filled blisters."],["rewarmpain","Pain or discomfort, especially when exposed to warmth after being cold."]],
+  steps:["Move the casualty indoors or somewhere warmer.","Rewarm gradually: place the area against warm body parts (such as the armpits) or use comfortably warm, not hot, water.","Once warm, protect and cover the area with warm clothing, gloves or socks.","Discourage scratching or rubbing."],
+  cautions:["Avoid sudden temperature changes and direct heat such as heaters or fires."],
+  evacText:"Seek medical advice if symptoms worsen, blisters or open sores develop, or there are signs of infection."},
+ {id:"snowblind",name:"Snow blindness",ch:"Ch 17",ref:"¶ 17-43 to 17-45",evac:"self",fid:"v",
+  signs:[["snowsun"],["eyepain","Eye pain. Redness and inflammation of the eyes."],["gritty","A sensation of grittiness; feeling as if there is something in the eye."],["tearing","Watery eyes and excessive tearing."],["vision","Blurred vision. Temporary vision loss in severe cases."],["lightsens","Sensitivity to light."],["headache","Headache."]],
+  steps:["Move to a dark or shaded area.","Rest the eyes: keep them closed or minimize eye movement.","Place a cold, damp cloth or cool pack over the closed eyes (no ice directly on the skin).","Use over-the-counter artificial tears if available.","In bright conditions, wear sunglasses with 100 percent UV protection, ideally wrap-around or with side shields."],
+  cautions:["Do not rub the eyes.","Pain often builds three to five hours after exposure."],
+  evacText:"Seek medical advice if symptoms persist or worsen, or if vision loss occurs."},
+ {id:"ams",name:"Altitude sickness",ch:"Ch 17",ref:"¶ 17-48, 17-50, 17-51",evac:"aid",fid:"v",
+  signs:[["altitude"],["headache","Headache."],["nausea","Nausea."],["dizzy","Dizziness."],["confused","Changes in consciousness, confusion, or disorientation."],["fatigue"]],
+  steps:["Move to a lower altitude immediately if the symptoms are from altitude.","Rest and stay hydrated.","Watch breathing: shallow or irregular breathing may mean respiratory distress.","Check for bluish lips or fingertips (a sign of low oxygen), which needs immediate medical attention.","Keep the casualty warm.","Give supplemental oxygen if available and you are trained."],
+  evacText:"If there is no improvement or symptoms worsen, seek medical assistance. In severe cases, evacuate to a medical facility at a lower altitude.",
+  note:"The manual lists only headache, nausea and dizziness for altitude sickness, plus the general guidance for altered mental status in the mountains. Fatigue is included because the manual lists exhaustion among mountain injuries."},
+ {id:"hape",name:"High-altitude pulmonary edema (HAPE)",ch:"Ch 17",ref:"¶ 17-52, 17-53",evac:"imm",fid:"v",
+  signs:[["altitude","Typically above 2,500 meters (8,200 feet)."],["sob","Breathing difficulties; severe respiratory distress."],["cyan","Blue lips or fingertips."]],
+  steps:["Descend immediately. Getting to lower elevation as quickly as possible is the most effective treatment.","Rest; give supplemental oxygen if available.","Keep warm with blankets and insulating layers.","Encourage fluids.","Monitor breathing closely."],
+  cautions:["Blue lips or fingertips may indicate a critical situation: seek professional help immediately.","Medications such as nifedipine or sildenafil may be used, but their use is for a medical professional to decide."],
+  evacText:"HAPE is a medical emergency. Seek evacuation to medical care at a lower altitude as soon as possible.",
+  note:"The manual describes HAPE as fluid in the lungs and gives treatment, but no full sign list; breathing trouble and blue lips come from its monitoring steps."},
+ {id:"hace",name:"High-altitude cerebral edema (HACE)",ch:"Ch 17",ref:"¶ 17-54, 17-55",evac:"imm",fid:"v",
+  signs:[["altitude","Typically above 3,000 meters (9,800 feet)."],["confused","Confusion."],["coord","Loss of coordination."],["unconscious","Changes in consciousness."],["sleepy"],["headache"]],
+  steps:["Descend immediately and rapidly.","Rest; give supplemental oxygen if available.","Keep warm.","Encourage fluids.","Monitor neurological symptoms closely.","Keep the casualty calm and reassured."],
+  cautions:["Medications such as dexamethasone may be used, but their use is for a medical professional to decide."],
+  evacText:"HACE is a medical emergency. Seek evacuation to medical care at a lower altitude as quickly as possible.",
+  note:"The manual describes HACE as brain swelling and gives no full sign list; the signs here come from its monitoring step. Headache and drowsiness are included as altered-consciousness signs; they are not listed under HACE itself."},
+ {id:"shock",name:"Shock",ch:"Ch 7",ref:"¶ 7-6, 7-13 to 7-17",evac:"aid",fid:"v",
+  signs:[["confused","Mental confusion."],["weakpulse","Weak or absent radial pulse."],["rapidbr","Rapid breathing."],["nausea","Nausea."],["coolsweat","Sweaty, cool, or clammy skin."],["thirst","Excessive thirst."],["pale","Pale or gray skin."],["bleedlife","Previous severe bleeding."]],
+  steps:["Control any bleeding first; that is the most important step in treating shock.","Move the casualty into shade or shelter.","If conscious, lay them on their back with feet elevated slightly above the heart (a sitting position is fine if it makes breathing easier).","Loosen clothing at the neck, waist, or anywhere it binds.","Prevent chilling or overheating: wrap completely in a blanket or clothing, with no part touching the ground.","Calm and reassure the casualty, and watch closely for life-threatening conditions."],
+  cautions:["Do not give food or drink. If you must leave them or they are unconscious, turn the head to the side in case of vomiting.","If a leg is fractured, do not raise the legs until the fracture is splinted.","Confusion plus a weak or absent radial pulse means significant blood loss."],
+  evacText:"Seek medical aid. Alert medical personnel if the casualty shows signs of shock."},
+ {id:"anaph",name:"Anaphylactic shock (severe allergic reaction)",ch:"Ch 7",ref:"¶ 7-30 to 7-37",evac:"imm",fid:"v",
+  signs:[["allergen","Known allergies or recent exposure to an allergen."],["bite"],["sob","Sudden, severe difficulty breathing or shortness of breath; rapid or labored breathing."],["wheeze","Wheezing or other abnormal breathing sounds."],["rapidpulse","Rapid or weak pulse."],["weakpulse"],["lips","Swelling of the face, lips, or tongue."],["hives","Hives or widespread skin redness."],["confused","Confusion, dizziness, or loss of consciousness."],["dizzy"],["unconscious"],["cyan","Pale or bluish skin."],["nausea","Nausea, vomiting, abdominal pain."],["vomit"],["abcramp"],["doom","A feeling of impending doom."]],
+  steps:["Call for medical help immediately.","Help the casualty use their own epinephrine autoinjector, or give it yourself if allowed and trained. Typical doses are on the injector: 0.15 mg for children, 0.3 mg for adults over 66 pounds.","Further doses may be given every 5 to 10 minutes if prescribed and symptoms persist.","Position the casualty on their back with legs elevated, if injuries permit.","Perform rescue breathing and chest compressions if required.","Check vital signs every 3 to 5 minutes until stable."],
+  cautions:["Reactions can appear within seconds or minutes of exposure and affect the skin, breathing and circulation."],
+  evacText:"Request MEDEVAC immediately and transport the casualty to the nearest medical facility as soon as possible."},
+ {id:"choke",name:"Airway obstruction (choking)",ch:"Ch 5",ref:"¶ 5-29 to 5-37",evac:"aid",fid:"v",
+  signs:[["cough","Can speak or cough effectively."],["stridor","High-pitched sounds when breathing or coughing (poor air exchange)."],["silentcough","Unable to breathe."],["cyan"],["sob"]],
+  steps:["Ask if they can speak or are choking, and look for the universal choking sign (figure 5-11).","If they can speak or cough effectively, encourage them to keep coughing and do not interfere.","If air exchange is poor or they cannot breathe, call for help. Give five back blows.","Then give abdominal thrusts: stand behind, fist thumb-side in against the midline just above the navel and well below the breastbone, grasp it with the other hand, and give quick backward and upward thrusts, each separate and distinct.","Use chest thrusts instead for advanced pregnancy, marked obesity, or an abdominal wound: arms under the armpits, fist on the middle of the breastbone.","Continue until the object comes out or the casualty becomes unresponsive. If unresponsive: call for help, open the airway, do a finger sweep only if you can see the object, and attempt rescue breathing."],
+  evacText:"Call for help as soon as air exchange is poor; seek medical aid afterward."},
+ {id:"chest",name:"Open (sucking) chest wound",ch:"Ch 6",ref:"¶ 6-19 to 6-28",evac:"aid",fid:"v",
+  signs:[["chestwound","A puncture wound of the chest."],["sucking","A “sucking” or “hissing” sound when the casualty inhales."],["sob","Difficulty breathing."],["froth","Froth or bubbles around the injury."],["coughblood","Coughing up blood. Blood-tinged sputum (spit)."],["trauma"]],
+  steps:["Place a gloved hand over the wound as a temporary seal.","Wipe the skin, have the casualty fully exhale, then place a vented chest seal (or a non-vented one if that is all you have) with edges at least two inches beyond the wound. Tape all four sides if it doesn't seal, without covering the vent.","Check the back for wounds and seal them the same way.","Place a conscious casualty in a position of comfort (usually sitting); an unconscious one in the recovery position, injured side down.","Monitor for increasing difficulty breathing."],
+  cautions:["If breathing gets worse, suspect a tension pneumothorax: lift the seal to let trapped air out (“burp” it), then reseal on exhalation.","If unsure whether the wound penetrates the chest wall, treat it as an open chest wound. First wound found, first wound treated."],
+  evacText:"Seek medical aid and continue to monitor the casualty until relieved by medical personnel."},
+ {id:"bleed",name:"Life-threatening bleeding from a limb",ch:"Ch 4, 7",ref:"¶ 4-5 to 4-10, 4-39, 4-40, 7-21 to 7-24",evac:"aid",fid:"s",
+  signs:[["bleedlife","Pulsing or steady bleeding; clothes soaked with blood; blood pooling on the ground; bandages steadily soaking through."],["amputation","Traumatic amputation of an extremity."],["bleedlimb"],["confused","Prior bleeding and now in shock (unconscious, confused, pale)."],["pale"],["trauma"]],
+  steps:["Apply a tourniquet immediately: two to three inches above the wound, directly on the skin (high and tight on the limb if the source is unclear). Tighten until the bleeding stops.","Mark the tourniquet site and the time it was applied.","Use direct pressure as a stopgap until a tourniquet or dressing is in place.","Where a tourniquet can't be used (groin, armpit, neck), pack the wound thoroughly with hemostatic dressing and hold constant, direct pressure.","For bleeding that is not life-threatening, a pressure dressing is enough. Check the pulse and skin beyond it."],
+  cautions:["Do not place a tourniquet directly over the knee or elbow. If one doesn't stop the bleeding, a second may be needed, especially on the thigh.","Tourniquets should be removed only by medical personnel. The safe limit is under two hours; limb loss becomes likely after six.","Loosen and retie a pressure bandage if the skin below it is cool, bluish or numb, or the pulse is absent."],
+  evacText:"Seek medical aid. Reassess every tourniquet and dressing often, and every time the casualty is moved.",
+  note:"Condensed from several chapters; the manual's step-by-step tourniquet procedures are in ¶ 4-41 to 4-44."},
+ {id:"burnT",name:"Thermal burn",ch:"Ch 12",ref:"¶ 12-2 to 12-21",evac:"aid",fid:"v",
+  signs:[["heatsrc","Contact with hot metals, scalding liquids, flames, or steam."],["burned","Superficial: redness, pain, and mild swelling."],["blisters","Partial thickness: blisters, severe pain, redness, and swelling."],["charred","Full thickness: skin may look white, blackened, or charred, and there might be no feeling in the area."],["burnpain"]],
+  steps:["Stop the source of the burn and remove the casualty from it. Extinguish any flames.","Cut the clothing around the burned area and gently lift it away.","Avoid grabbing the burned area while moving the casualty."].concat(BURN_ALL),
+  cautions:["If clothing is stuck to the burn, cut around it and leave it in place."].concat(BURN_CAUT),
+  evacText:"Seek medical aid. Full thickness burns require immediate medical attention."},
+ {id:"burnE",name:"Electrical or lightning burn",ch:"Ch 12",ref:"¶ 12-10, 12-13 to 12-21",evac:"aid",fid:"v",
+  signs:[["elec"],["burned"],["charred"],["unconscious","Temporary unconsciousness."],["sob","Difficulties in breathing."]],
+  steps:["Turn off the electricity if possible.","If it can't be turned off, use nonconductive material (rope, clothing, or dry wood) to drag the casualty away from the source.","Move the casualty to a safe place."].concat(BURN_ALL),
+  cautions:["Do not touch the casualty or the electrical source with your bare hands. You will be injured too!","High voltage or lightning may cause temporary unconsciousness, difficulties in breathing, or an irregular heartbeat."].concat(BURN_CAUT),
   evacText:"Seek medical aid."},
- {id:"burnC",name:"Chemical burn",ch:"Ch 7",ref:"¶ 7-2 to 7-6",evac:"aid",fid:"v",
-  signs:[["chem"],["burned"],["burnpain"]],
-  steps:["Remove liquid chemicals by flushing with as much water as possible.","Gently lift away clothing covering the burned area.","Watch the casualty closely for signs of life-threatening conditions."],
-  cautions:["Do not break blisters or apply grease or ointments."],
+ {id:"burnC",name:"Chemical burn",ch:"Ch 12",ref:"¶ 12-12 to 12-21",evac:"aid",fid:"v",
+  signs:[["chem","Strong acids, solvents, or detergents in contact with the skin."],["burned"],["burnpain"],["blisters"]],
+  steps:["Carefully brush off dry chemicals with a clean, dry cloth.","Flush the area with copious flowing water to remove liquid chemicals.","Apply a wet barrier (water-soaked gauze, clothing, or mud) with an occlusive dressing.","Tell medical personnel immediately.","Monitor for life-threatening conditions, check for other injuries, and treat for shock if needed. Prevent hypothermia."],
+  cautions:["Do not submerge a chemical burn casualty in water. It greatly contributes to hypothermia and spreads the irritation."],
   evacText:"Seek medical aid."},
- {id:"fracture",name:"Fracture, dislocation or sprain",ch:"Ch 13",ref:"¶ 13-3 to 13-24",evac:"evac",fid:"s",
-  signs:[["trauma"],["deform","Deformity"],["swelltender","Tenderness, swelling, pain"],["cantmove","Inability to move the injured part"],["bone","Bone protruding through the skin"],["bleedlimb","Bleeding"],["discolor","Skin discoloration at the injury site"]],
-  steps:["Treat more serious injuries first.","Remove jewelry and expose the site; check distal pulse and capillary refill.","Immobilize with a rigid or formable splint, padded, with cravats tied above and below the fracture.","Make sure the splint stops movement without impairing circulation; recheck distal pulse after splinting.","Arm injuries: add a sling and swathe.","Observe for shock and treat if needed; recheck the pulse periodically."],
-  cautions:["Femur: do not move the casualty unless leaving them would cause greater injury; never straighten the limb or apply traction. “A fractured femur is a medical emergency.”","No distal pulse: one gentle in-line traction attempt; if the pulse does not return, splint in the most comfortable position and evacuate immediately.","Open fractures are contaminated and subject to infection."],
-  evacText:"Seek medical assistance and evacuate as soon as possible. If swelling occurs and the distal pulse is lost, evacuate immediately.",
-  note:"Dislocations and sprains are treated as closed fractures."},
- {id:"widow",name:"Black widow spider bite",ch:"Ch 10",ref:"¶ 10-3, 10-12",evac:"aid",fid:"s",
-  signs:[["bite"],["dullache","Pinprick at the bite that becomes a dull ache"],["spasms","Severe painful muscle spasms"],["rigidab","Rigid, board-like abdomen"],["dizzy","Dizziness (severe cases)"],["nausea","Nausea (severe cases)"],["vomit","Vomiting (severe cases)"],["sob","Respiratory distress (severe cases)"]],
-  steps:GEN_BITE, evacText:"Seek medical aid. Treat for anaphylactic shock if necessary."},
- {id:"recluse",name:"Brown recluse spider bite",ch:"Ch 10",ref:"¶ 10-4, 10-12",evac:"aid",fid:"s",
-  signs:[["bite"],["painless","Often painless at first; hours later bluish with a white border"],["bullseye","Red halo or bull's-eye; large ulcer within 7–10 days"]],
-  steps:GEN_BITE, evacText:"Seek medical aid."},
- {id:"scorpH",name:"Scorpion sting (harmless species)",ch:"Ch 10",ref:"¶ 10-5, 10-12",evac:"aid",fid:"s",
-  signs:[["bite"],["sharppain","Sharp pain at the sting site; lasts 24–72 hours"]],
-  steps:GEN_BITE, evacText:"Seek medical aid."},
- {id:"scorpD",name:"Scorpion sting (deadly species)",ch:"Ch 10",ref:"¶ 10-6, 10-12",evac:"aid",fid:"s",
-  signs:[["bite"],["sharppain","Sharp pain"],["tingle","“Pins and needles” sensation"],["spasms","Severe muscle contractions"],["drool","Drooling"],["incont","Incontinence"],["seizure","Seizures"]],
-  steps:GEN_BITE, evacText:"Seek medical aid.",
-  note:"The manual also lists hypertension and cardiac failure, which a first-aider can't enter as signs here."},
- {id:"beeM",name:"Bee, wasp or hornet sting (mild reaction)",ch:"Ch 10",ref:"¶ 10-7",evac:"self",fid:"s",
-  signs:[["bite"],["sharppain","Pain at the site"],["localrs","Wheal, redness and swelling at the site"],["localitch","Itching"],["anxiety","Anxiety"]],
-  steps:GEN_BITE, cautions:["Watch for signs of anaphylaxis (manual warning, p. 10-2)."],
-  evacText:"No evacuation instruction is listed for a mild reaction."},
- {id:"beeS",name:"Severe allergic reaction to a sting (anaphylaxis)",ch:"Ch 10",ref:"¶ 10-8, 10-14",evac:"imm",fid:"s",
-  signs:[["bite"],["hives","Generalized itching and hives"],["chesttight","Chest tightness"],["lips","Swelling of the lips and tongue"],["wheeze","Wheezing"],["sob","Shortness of breath, respiratory distress"],["abcramp","Abdominal cramps"]],
-  steps:["Treat the casualty for anaphylactic shock (Task 081-833-0003, Ch 22)."],
-  evacText:"If the casualty shows signs of an allergic reaction, begin transport immediately.",
-  note:"Ch 22 (anaphylactic shock treatment) was not retrieved for this test."},
- {id:"fireant",name:"Fire ant stings",ch:"Ch 10",ref:"¶ 10-9, 10-12",evac:"aid",fid:"s",
-  signs:[["bite"],["burnpain","Intense, burning pain"],["circle","Bites in a circular pattern"],["blisters","Painful fluid-filled blisters within minutes"],["localrs","Large local reaction, possibly the whole limb"]],
-  steps:GEN_BITE, cautions:["Anaphylactic shock is possible."], evacText:"Seek medical aid."},
- {id:"tick",name:"Tick bite",ch:"Ch 10",ref:"¶ 10-10, 10-13",evac:"aid",fid:"s",
-  signs:[["tick"],["localitch","Itching at the site"],["localrs","Redness at the site"],["headache","Headache"],["fever","Fever"],["jointpain","Joint or leg pain"],["nodes","Swollen lymph nodes"],["paralysis","Paralysis or other nervous system problems after several days"]],
-  steps:["Remove all parts of the tick: grasp it as close to the skin as possible with tweezers and pull straight out with steady pressure.","Wash the area with saline or clean water and soap.","Monitor vital signs."],
-  evacText:"Seek medical aid."},
- {id:"insect",name:"Unknown insect bite or sting",ch:"Ch 10",ref:"¶ 10-11, 10-14",evac:"aid",fid:"s",
-  signs:[["bite"],["sharppain","Pain at the site"],["localrs","Swelling at the site"],["sob","Breathing difficulty"]],
-  steps:["Cleanse the site with antiseptic.","Treat for anaphylactic shock if necessary."],
-  evacText:"Seek medical aid."}
+ {id:"fracture",name:"Fracture of an arm or leg",ch:"Ch 13",ref:"¶ 13-10 to 13-21",evac:"aid",fid:"v",
+  signs:[["trauma"],["swelltender","Significant pain along with marked swelling."],["snap","An audible or perceived “snap.”"],["deform","Different length or shape of limb."],["pulseloss","Loss of pulse or sensation in the injured arm or leg."],["crepitus","Crepitus (a crackling or popping sound under the skin)."],["bone","Open fracture: a break in the skin, often with protruding bone."]],
+  steps:["Treat any wound before splinting near it.","Check the pulse below the fracture and watch for coolness or numbness.","Splint in the position of function or a normal resting position, immobilizing the joints above and below the fracture. Use a padded semi-rigid splint or improvised boards or branches.","Pad the splint; tie cravats above and below the fracture, not on it, with square knots away from the body.","Arm: have the casualty support the arm, mold the splint on the uninjured arm, and secure the arm to the body.","Recheck the pulse after splinting and keep monitoring."],
+  cautions:["Loosen and reapply if there is numbness, tingling, increasing pain, or pale or bluish fingers or toes.","Avoid manipulating the fracture site, tying too tightly, or placing splint ends against the groin.","If a leg is fractured, do not raise the legs for shock until it is splinted (¶ 7-16)."],
+  evacText:"Seek medical aid. The fracture chapter gives no separate evacuation instruction."},
+ {id:"pelvis",name:"Pelvic fracture",ch:"Ch 7",ref:"¶ 7-19, 7-20",evac:"evac",fid:"v",
+  signs:[["trauma","Blunt force or blast trauma."],["pelvicpain","Pelvic pain. Pelvic deformities, penetrating injuries, or bruising near the pelvis. Instability or crepitus."],["crepitus"],["amputation","Major lower-limb amputation or near amputation."],["unconscious","Unconsciousness or shock."],["coolsweat"],["pale"]],
+  steps:["Suspect a pelvic fracture after blunt trauma with any of these signs.","Notify medical personnel of a possible pelvic fracture as soon as possible.","Treat for shock and watch closely; a pelvic fracture can cause massive internal bleeding you can't control."],
+  evacText:"The casualty will require advanced evaluation by medical personnel. Notify them as soon as possible; internal bleeding requires rapid evacuation (¶ 7-4).",
+  note:"A Tier 2 topic in the manual, included because falls in the backcountry can cause it. Pale, cool, sweaty skin stands for the manual's “shock.”"},
+ {id:"headclosed",name:"Closed head injury",ch:"Ch 11",ref:"¶ 11-4 to 11-7, 11-13 to 11-17, 11-24 to 11-34",evac:"evac",fid:"v",
+  signs:[["headblow"],["headache","Headache or pressure in the head."],["nausea","Nausea and vomiting."],["vomit"],["repvomit","Repeated vomiting."],["dizzy","Dizziness and balance problems."],["coord","Staggering while walking."],["confused","Confusion and disorientation."],["memory","Memory loss or difficulty concentrating."],["restless","Mood and behavior changes; increased restlessness, combative, or agitated behavior."],["vision","Sensory changes, such as blurred vision; double vision."],["ringing","Ringing in the ears."],["lightsens","Sensitivity to light and sound."],["pupils","Unequal pupils."],["blackeye","Bruising (black eyes)."],["seizure","Convulsions or twitches."],["numbweak","Weakness or tingling sensations in the arms or legs."],["unconscious","Loss of consciousness (in severe cases)."],["recentko","Recent unconsciousness."]],
+  steps:HEAD_STEPS, cautions:HEAD_CAUT, evacText:HEAD_EVAC,
+  note:"Cerebral contusion (a bruise to the brain itself, ¶ 11-13 to 11-17) is folded in here; its signs are a subset of these."},
+ {id:"concussion",name:"Concussion",ch:"Ch 11",ref:"¶ 11-8 to 11-12, 11-30 to 11-34",evac:"evac",fid:"v",
+  signs:[["headblow","A blow, jolt, or bump to the head or body."],["headache","Headache or pressure in the head."],["dizzy","Dizziness or feeling lightheaded."],["confused","Confusion or feeling mentally foggy."],["memory","Memory problems or difficulty concentrating."],["fatigue","Fatigue or feeling tired."],["nausea","Nausea or vomiting."],["vomit"],["lightsens","Sensitivity to light or noise."],["restless","Irritability or changes in mood."],["vision","Blurred vision or difficulty with balance."],["coord"],["recentko"]],
+  steps:HEAD_STEPS.concat(["Initial management is rest: avoid activities that could further injure the brain."]), cautions:HEAD_CAUT.concat(["Most concussions occur without loss of consciousness."]), evacText:HEAD_EVAC},
+ {id:"headopen",name:"Open head injury",ch:"Ch 11",ref:"¶ 11-2, 11-3, 11-29 to 11-34",evac:"now",fid:"v",
+  signs:[["headblow"],["headwound","Visible head wound or laceration; profuse bleeding."],["headdeform","Skull deformity or depression."],["earfluid","Clear fluid or blood drainage from the nose, ears, or wound."],["unconscious","Loss of consciousness."],["headache","Severe headache."],["nausea","Nausea and vomiting."],["vomit"],["confused","Confusion and disorientation; memory loss."],["memory"],["seizure","Seizures."],["vision","Changes in speech or vision; double vision."],["slurred"],["numbweak","Weakness or numbness."]],
+  steps:HEAD_STEPS.concat(["If brain tissue is protruding, leave the wound alone: cover it loosely with a moistened dressing, then a first aid dressing. Position the head higher than the body and keep the casualty warm."]),
+  cautions:HEAD_CAUT, evacText:"Open head injuries are medical emergencies. Seek immediate medical attention and evacuate as soon as possible."},
+ {id:"abdomen",name:"Abdominal wound",ch:"Ch 14",ref:"¶ 14-2 to 14-11",evac:"aid",fid:"v",
+  signs:[["abdwound","An object penetrates the abdominal wall."],["organs","Protruding organs."],["abcramp"],["coolsweat"],["pale"]],
+  steps:["Lay the casualty on their back with knees up (flexed).","Expose the wound, but leave clothing that is stuck to it.","Pick up any organs on the ground with a clean, dry dressing and place them on top of the abdomen, near the wound.","Cover with a dressing large enough for the whole area, moistened with clean water (the sterile side of the plastic wrapper first, if large enough). Tie the tails loosely at the casualty's side.","Keep the casualty warm. If evacuation is delayed, check for shock every five minutes.","Check for both entry and exit wounds; treat the more serious first."],
+  cautions:["Do not touch exposed organs with bare hands or push them back inside.","Do not probe, clean, or remove foreign objects. Do not put pressure on the wound.","Do not give food or water (moistening the lips is allowed)."],
+  evacText:"Prepare the casualty for evacuation on their back with knees flexed. Seek medical aid.",
+  note:"Abdominal pain and pale, cool, sweaty skin are included because the manual names severe bleeding and shock as the main dangers; they are not in its sign list."},
+ {id:"impale",name:"Impaled object",ch:"Ch 14",ref:"¶ 14-22 to 14-24",evac:"aid",fid:"v",
+  signs:[["impaled"],["bleedlimb"]],
+  steps:["Tell the casualty to stay still and not move the object.","Expose the injury by cutting away clothing or equipment.","If on an arm or leg, check the pulse beyond the injury.","If needed, apply direct pressure with gloved hands on either side of the object.","Build several layers of bulky dressings around the object and bandage over them, tight enough to hold but not to impair circulation or breathing. Recheck the pulse and loosen if it is lost.","Splint or sling if applicable. Treat for shock if necessary.","Object through the cheek with both ends visible: remove it in the direction it entered and position the casualty to drain."],
+  evacText:"Seek medical assistance."},
+ {id:"snakeviper",name:"Snakebite: pit viper (rattlesnake, copperhead, cottonmouth)",ch:"Ch 16",ref:"¶ 16-23 to 16-27, 16-36 to 16-42",evac:"now",fid:"v",
+  signs:[["snake"],["burnpain","Severe burning pain."],["fangs","Discoloration and swelling around the fang marks, usually within five to ten minutes, slowly spreading."],["localrs","Further swelling and changes in skin color."],["blisters","Bleeding blisters."],["numb","Numbness of the affected area."],["weak","Weakness."],["rapidpulse","Rapid pulse."],["nausea","Nausea."],["vomit","Vomiting."],["sob","Shortness of breath."],["coolsweat","Sweating."],["pale","Shock."]],
+  steps:SNAKE_STEPS, cautions:SNAKE_CAUT,
+  evacText:"Seek medical attention immediately. Medical care can give antivenom.",
+  note:"If only minimal swelling appears within 30 minutes, the bite was almost certainly from a nonvenomous snake or a venomous one that injected no venom (¶ 16-25). Rattlesnakes are the pit vipers found in Colorado."},
+ {id:"snakeelapid",name:"Snakebite: coral snake or other elapid",ch:"Ch 16",ref:"¶ 16-28 to 16-31, 16-36 to 16-42",evac:"now",fid:"v",
+  signs:[["snake"],["localpain","Initially only minimal pain and swelling."],["vision","Blurred vision."],["droopy","Drooping eyelids."],["slurred","Slurred speech."],["sleepy","Drowsiness."],["drool","An increase in salivation and sweating."],["nausea","Later: nausea, vomiting, respiratory difficulties, shock."],["vomit"],["sob"],["paralysis","Paralysis."],["seizure","Convulsions."],["unconscious","Coma."]],
+  steps:SNAKE_STEPS, cautions:SNAKE_CAUT.concat(["Elapid bites are often underestimated: neurological symptoms typically begin one to seven hours after the bite."]),
+  evacText:"Seek medical attention immediately.",
+  note:"US coral snakes: “Red on yellow, kill a fellow; red on black, venom lack” (applies only in the US). Cobras, kraits and mambas are elapids elsewhere in the world."},
+ {id:"animal",name:"Animal or human bite",ch:"Ch 16",ref:"¶ 16-5, 16-6",evac:"aid",fid:"v",
+  signs:[["animal"],["openwound","Bruises, infection, tears or lacerations of tissue (¶ 16-4)."],["bleedlimb"]],
+  steps:["Get away from further harm; make sure you can't be bitten again.","Control bleeding with direct pressure from a clean cloth or sterile gauze; elevate the wound if possible.","Rinse the wound thoroughly with clean water or saline, and gently remove debris with mild soap and water.","Apply an antiseptic solution or ointment suitable for open wounds.","Cover with a sterile dressing or clean bandage and change it regularly."],
+  cautions:["Rabies is the primary concern. Unless the animal is a pet verified to be up to date on rabies vaccination, the person bitten must get the rabies post-exposure vaccine.","If the animal can't be captured, give medical personnel any information that helps identify it."],
+  evacText:"Seek medical evaluation for all animal bites, especially from unfamiliar or wild animals, deep wounds, or bites that become red, swollen or increasingly painful."},
+ {id:"jelly",name:"Jellyfish or anemone sting",ch:"Ch 16",ref:"¶ 16-10",evac:"self",fid:"v",
+  signs:[["marine"],["burnpain","Burning pain."],["rash","A rash with small hemorrhages on the skin."],["cramps","Muscular cramping."],["nausea","Nausea, vomiting."],["vomit"],["sob","Respiratory distress."],["coolsweat","Shock."]],
+  steps:["Gently remove clinging tentacles with a towel.","Wash or treat the area: the manual lists diluted ammonia or alcohol, a meat tenderizer, and talcum powder."],
+  evacText:"If symptoms become severe or persist, seek medical assistance."},
+ {id:"spine",name:"Stingray, spiny fish or sea urchin puncture",ch:"Ch 16",ref:"¶ 16-11",evac:"self",fid:"v",
+  signs:[["marine"],["localrs","Swelling."],["localpain"],["nausea","Nausea, vomiting."],["vomit"],["cramps","Generalized cramps."],["diarrhea","Diarrhea."],["paralysis","Muscular paralysis."],["coolsweat","Shock."]],
+  steps:["Soak the wound in hot water, when available, for 30 to 60 minutes to inactivate the heat-sensitive toxin.","Control bleeding and apply a dressing as necessary."],
+  cautions:["Don't scald the casualty: the pain of the wound masks the normal reaction to heat."],
+  evacText:"No evacuation instruction is given; deaths are rare. Seek care for severe symptoms."},
+ {id:"widow",name:"Black widow spider bite",ch:"Ch 16",ref:"¶ 16-57, 16-59, 16-48",evac:"aid",fid:"v",
+  signs:[["bite"],["localpain","Intense pain."],["cramps","Muscle cramps."],["nausea","Nausea."],["numbweak","In severe cases, can affect the nervous system."]],
+  steps:INSECT_STEPS,
+  cautions:["Bites are rarely fatal, but medical attention is still recommended."],
+  evacText:"If bitten by a spider and experiencing severe symptoms, seek immediate medical attention.",
+  note:"The manual gives no spider-specific first aid steps. The steps shown are its general insect bite steps (¶ 16-48)."},
+ {id:"recluse",name:"Brown recluse spider bite",ch:"Ch 16",ref:"¶ 16-58, 16-59, 16-48",evac:"aid",fid:"v",
+  signs:[["bite"],["ulcer","Tissue necrosis (cell death), leading to an ulcerous wound."],["localpain","Pain."],["localitch","Itching."],["fever","Systemic effects."]],
+  steps:INSECT_STEPS,
+  evacText:"The wound may require medical attention. Seek immediate medical attention if symptoms are severe.",
+  note:"The manual gives no spider-specific first aid steps. The steps shown are its general insect bite steps (¶ 16-48). “Fever” stands for the manual's “systemic effects.”"},
+ {id:"insect",name:"Bee, wasp or other insect sting",ch:"Ch 16",ref:"¶ 16-43, 16-48, 16-49",evac:"self",fid:"v",
+  signs:[["bite"],["localpain","Pain."],["localrs","Swelling; inflammation."],["localitch","Itching."]],
+  steps:INSECT_STEPS,
+  evacText:"Consult a health care professional if the insect is unknown or symptoms are severe or worsening. Seek immediate medical attention for signs of anaphylaxis."},
+ {id:"fireant",name:"Fire ant stings",ch:"Ch 16",ref:"¶ 16-75 to 16-77",evac:"self",fid:"v",
+  signs:[["bite"],["burnpain","A sharp, burning sensation."],["localrs","A raised, reddish bump."],["multistings","Multiple stings, as many ants attack at once."],["localitch"]],
+  steps:["Move away from the ants.","Remove clothing or jewelry that may have ants trapped in it.","Gently wash the area with soap and water.","Apply a cold compress or an ice pack wrapped in a cloth.","Over-the-counter pain relievers (acetaminophen or ibuprofen) may help; follow the label.","Avoid scratching; antihistamine or hydrocortisone creams may be used under a health care professional's guidance."],
+  cautions:["Monitor for an allergic reaction: difficulty breathing, swelling of the face or throat, or widespread hives. People allergic to ant venom need immediate medical attention."],
+  evacText:"Consult a health care professional if symptoms worsen or persist."},
+ {id:"tick",name:"Tick bite",ch:"Ch 16",ref:"¶ 16-78 to 16-83",evac:"self",fid:"v",
+  signs:[["tick"],["localrs","Redness and swelling at the site."],["localitch","Itching or irritation."],["rash","A small red spot or rash that may expand and look like a target."],["fever","Flu-like symptoms days or weeks later: fever, fatigue, headache, muscle aches, joint pain."],["fatigue"],["headache"],["nodes","Swollen lymph nodes."]],
+  steps:["Grasp the tick with fine-tipped tweezers as close to the skin as possible, without squeezing the body.","Pull upward gently and steadily with even pressure; do not twist or jerk. Remove the whole tick, including mouthparts.","Dispose of it in a sealed bag or container, or in alcohol.","Clean the bite with soap and water or an antiseptic, and apply antiseptic ointment.","Watch the site for an allergic reaction, infection, or a rash."],
+  cautions:["Lyme disease, carried by the blacklegged “deer” tick, can cause long-term problems if not treated early.","Rarely, a tick bite can cause a severe allergic reaction; get immediate medical attention."],
+  evacText:"Seek medical attention for concerning symptoms, or for fever, rash, joint pain or flu-like symptoms after a tick bite."},
+ {id:"eyechem",name:"Chemical burn of the eye",ch:"Ch 10",ref:"¶ 10-41 to 10-51",evac:"evac",fid:"v",
+  signs:[["eyechem"],["eyepain","Irritation. Pain and redness."],["tearing","Watering and tearing. Inability to keep the eye open."],["lidswell","Swelling of the eyelid."],["vision","Blurred vision."]],
+  steps:["IMMEDIATELY flood the eye with water.","Keep irrigating with running water from a bottle, cup or low-pressure source held 1 to 1½ inches away, directed from the inner eye (nearest the nose) toward the ear, away from the unaffected eye.","Start transport and keep washing for at least 20 minutes or until arrival at medical care.","Pat the area around the eye dry with gauze without touching the eye.",EYE_SHIELD],
+  cautions:["Alkalis (fertilizer, drain and oven cleaners, plaster, cement) are the most dangerous; acids are usually less severe.","Burned eyelids swell to protect the eye; protect it with a rigid shield."].concat(EYE_CAUT),
+  evacText:"Seek MEDEVAC for the casualty. Evacuate without causing further harm."},
+ {id:"eyefb",name:"Foreign body in the eye",ch:"Ch 10",ref:"¶ 10-21 to 10-30",evac:"aid",fid:"v",
+  signs:[["eyeobj"],["eyepain"],["gritty"],["tearing"],["eyebleed","Bleeding in the eye."],["eyestuck","Foreign object stuck to or sticking into the eyeball."]],
+  steps:["Look at the eyes: are the pupils equal and round? Look for bleeding or foreign bodies.","A surface, non-embedded speck (an eyelash or dirt) may be removed by the casualty if it comes out easily.","Otherwise, "+EYE_SHIELD.charAt(0).toLowerCase()+EYE_SHIELD.slice(1),"Object stuck in the eye: build dry sterile dressings around it for support and cover the eye with a paper cup or cardboard cone.","Note the source and type of the object, how it got there, when the discomfort started, and any earlier eye injury."],
+  cautions:["Removing foreign bodies from the eye is NOT a first aid procedure. Do not probe for them.","Do not remove an object stuck to or sticking into the eyeball; a physician must remove it."].concat(EYE_CAUT),
+  evacText:"Seek further medical aid immediately."},
+ {id:"eyelid",name:"Cut eyelid or eyeball",ch:"Ch 10",ref:"¶ 10-8 to 10-20",evac:"evac",fid:"v",
+  signs:[["eyeblow"],["lidswell","Swelling or lacerations of the eyes."],["eyebleed","Bleeding surrounding the eye, from inside the eyeball, or coming from the eyeball."],["bloodshot","Bloodshot appearance of the white of the eyes."]],
+  steps:["Seat a conscious casualty; lay an unconscious one on their back with the head slightly elevated.","Gently clean dirt or blood from around the eye.","Cut eyelid: control bleeding with light pressure from a dressing. Torn eyelids bleed heavily but usually stop quickly.","Cut eyeball (or suspected): cover with a loose sterile dressing and no pressure at all.",EYE_SHIELD,"Wrap detached pieces of eyelid or skin in moist (saline if available) gauze and send them with the casualty. Ask about contact lenses, but don't force the eyelids open."],
+  cautions:["Do not apply pressure if the eyeball itself may be cut: pressure can force the eye's fluid out and cause permanent injury."].concat(EYE_CAUT),
+  evacText:"Evacuate on the back with the head elevated and immobilized. Bring corrective eyeglasses, even if broken."},
+ {id:"eyeout",name:"Eye protruding from the socket",ch:"Ch 10",ref:"¶ 10-31 to 10-40",evac:"imm",fid:"v",
+  signs:[["eyeblow"],["eyeout","Extrusion (the eye is protruding from the socket)."],["eyebleed"],["bloodshot"]],
+  steps:["Keep the casualty quiet and on their back; treat for shock.","Cut a hole in several layers of dressing and moisten it with the cleanest water available.","Place the dressing so the eyeball protrudes through the hole with minimal contact, built up higher than the eyeball.","If available, place a paper cup or cardboard cone over the eye without touching it, held with roller gauze.","Cover the unaffected eye."],
+  cautions:["Do not try to reposition the eyeball or put it back in the socket.","Do not bind or press on the injured eye. A standard rigid eye-shield is not deep enough for this injury."],
+  evacText:"Evacuate immediately: call for medical aid and arrange MEDEVAC as soon as possible. Transport on the back, head elevated and immobilized."}
 ];
 
-const EVAC = {imm:["Evacuate immediately","t-imm",0],evac:["Evacuate","t-evac",1],aid:["Seek medical aid","t-aid",2],self:["No evacuation listed","t-self",3],na:["Not retrieved","t-na",4]};
-const SOFT = {imm:"--imm-soft",evac:"--evac-soft",aid:"--aid-soft",self:"--self-soft",na:"--na-soft"};
+const EVAC = {imm:["Evacuate immediately","t-imm",0],now:["Medical help immediately","t-imm",1],evac:["Evacuate","t-evac",2],aid:["Seek medical aid","t-aid",3],self:["No evacuation required","t-self",4]};
+const SOFT = {imm:"--imm-soft",now:"--imm-soft",evac:"--evac-soft",aid:"--aid-soft",self:"--self-soft"};
 
 // IDF-style weights: rarer signs count more
 const df = {}; C.forEach(c=>new Set(c.signs.map(x=>x[0])).forEach(k=>df[k]=(df[k]||0)+1));
@@ -406,7 +530,7 @@ function renderRank(){
   // respiratory note (source coverage)
   const resp = ["wheeze","sob","chesttight"].some(k=>sel.has(k));
   $("respNote").hidden = !resp;
-  $("respNote").textContent = "Breathing signs: TC 4-02.1 has no asthma chapter, so wheezing here can only match choking or sting reactions.";
+  $("respNote").textContent = "Breathing signs: ATP 4-02.11 gives no first aid for asthma, so wheezing here can only match an allergic reaction.";
   if(current && !r.find(x=>x.c.id===current)) current = null;
   if(!current && r.length) current = r[0].c.id;
   const tl=$("topLink"); if(r.length){ tl.hidden=false; tl.textContent="Top match: "+r[0].c.name+" · see all "+r.length+" ↓"; } else tl.hidden=true;
@@ -421,13 +545,13 @@ function renderTx(){
   const signs = c.signs.filter(s=>!SBY[s[0]].ctx).map(s=>`<span class="sign${sel.has(s[0])?" hit":""}">${esc(s[1]||SBY[s[0]].label)}</span>`).join("");
   $("tx").innerHTML = `
     <div class="sec" style="gap:6px"><h3>${esc(c.name)}</h3>
-      <div class="meta"><span class="ref">TC 4-02.1 ${esc(c.ch)} · ${esc(c.ref)}</span><span class="tag ${e[1]}">${e[0]}</span></div></div>
+      <div class="meta"><span class="ref">ATP 4-02.11 ${esc(c.ch)} · ${esc(c.ref)}</span><span class="tag ${e[1]}">${e[0]}</span></div></div>
     <div class="sec"><h4>Signs in the manual (yours highlighted)</h4><div class="signs">${signs||'<span class="why">The manual lists no signs for this entry.</span>'}</div></div>
     <div class="sec"><h4>First aid</h4><ol>${c.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
     ${c.cautions?`<div class="sec caut"><h4>Cautions</h4><ul>${c.cautions.map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`:""}
     <div class="sec"><h4>Evacuation</h4><div class="evacbox" style="background:var(${SOFT[c.evac]})">${esc(c.evacText)}</div></div>
     ${c.note?`<div class="why">${esc(c.note)}</div>`:""}
-    <div class="fid">${c.fid==="v"?"Wording: short excerpts from the manual (Soldier/casualty language kept).":"Wording: a close summary of the manual's text, not a verbatim quote."}</div>`;
+    <div class="fid">${c.fid==="v"?"Wording: signs quote the manual, lightly trimmed; steps are condensed from it. Check the cited paragraphs for the full text.":"Wording: condensed from several parts of the manual; see the note above and the cited paragraphs."}</div>`;
 }
 
 function toggle(id){ isExample=false; sel.has(id)?sel.delete(id):sel.add(id); current=null; renderChips(); renderRank(); }
