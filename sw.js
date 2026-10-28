@@ -1,5 +1,5 @@
 // Symptom Sorter offline cache. Bump VERSION whenever index.html or the data changes.
-const VERSION = 'ss-fm51-2025-v11';
+const VERSION = 'ss-fm51-2025-v12';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
