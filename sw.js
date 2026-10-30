@@ -2,12 +2,16 @@
 // Online: always fetch the newest files from GitHub first, and save them for offline use.
 // Offline or very weak signal (no answer within 4 seconds): use the saved copy.
 // Bump VERSION whenever index.html or the data changes.
-const VERSION = 'ss-fm51-2025-v17';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const VERSION = 'ss-fm51-2025-v18';
+const CORE = ['./', './index.html'];                       // must save, or offline use won't work
+const EXTRA = ['./manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png']; // saved if present
 const TIMEOUT_MS = 4000;
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c =>
+    c.addAll(CORE.map(f => new Request(f, { cache: 'reload' })))
+     .then(() => Promise.all(EXTRA.map(f => c.add(new Request(f, { cache: 'reload' })).catch(() => {}))))
+  ).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
