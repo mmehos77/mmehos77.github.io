@@ -2,7 +2,7 @@
 // Online: always fetch the newest files from GitHub first, and save them for offline use.
 // Offline or very weak signal (no answer within 4 seconds): use the saved copy.
 // Bump VERSION whenever index.html or the data changes.
-const VERSION = 'ss-fm51-2025-v13';
+const VERSION = 'ss-fm51-2025-v15';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 const TIMEOUT_MS = 4000;
 
