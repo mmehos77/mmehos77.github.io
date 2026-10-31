@@ -2,7 +2,7 @@
 // Online: always fetch the newest files from GitHub first, and save them for offline use.
 // Offline or very weak signal (no answer within 4 seconds): use the saved copy.
 // Bump VERSION whenever index.html or the data changes.
-const VERSION = 'ss-fm51-2025-v24';
+const VERSION = 'ss-fm51-2025-v27';
 const CORE = ['./', './index.html'];                       // must save, or offline use won't work
 const EXTRA = ['./manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png']; // saved if present
 const TIMEOUT_MS = 4000;
@@ -31,7 +31,9 @@ function fromNetwork(req) {
 
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== location.origin) return;
+  if (url.searchParams.has('t')) return;   // update checks go straight to the network, never saved
   e.respondWith(
     fromNetwork(req).catch(() =>
       caches.match(req, { ignoreSearch: true }).then(hit => hit || caches.match('./index.html'))
