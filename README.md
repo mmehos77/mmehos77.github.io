@@ -21,7 +21,7 @@ All medical content comes from one publication:
 ## Using the app
 
 - **Signs** are grouped in assessment order: scene size-up, primary assessment (life threats, airway, breathing, circulation, mental status), then secondary assessment (vital signs, a head-to-toe exam, and what the patient reports). Group names and chip wording are the app's own; FM-51's exact wording shows when you open a condition.
-- **Typing or dictating:** the search box accepts everyday phrases, such as "short of breath, weak pulse, bleeding on right leg," and suggests matching signs to tap. It skips phrases preceded by "no," "not" or "denies." The phrase list is the app's own wording, about 1,500 phrases, not FM-51's. It works offline, and iPhone dictation works in the box.
+- **Typing or dictating:** the search box accepts everyday phrases, such as "short of breath, weak pulse, bleeding on right leg," and suggests matching signs to tap. It also reads vital-sign numbers ("pulse 120," "resp 28," "temp 104") using FM-51's adult cutoffs, listed in About. It skips phrases preceded by "no," "not" or "denies." The phrase list is the app's own wording, about 1,500 phrases, not FM-51's. It works offline, and iPhone dictation works in the box.
 - **Ranking:** rarer signs count more; a condition that explains everything you entered ranks above one that matches only part of it; ties go to the more urgent condition. The score is not a probability.
 - **Browse** lists every condition under its FM-51 protocol, in the manual's order.
 - **About** explains the ranking, the urgency and treatment tags, and includes FM-51's AVPU, SAMPLE and OPQRST checklists (pp. 107–108) and common WFA terms (A&O ×1–4, SOAP, ATMIST).
@@ -39,13 +39,13 @@ All medical content comes from one publication:
 | File | Purpose |
 |---|---|
 | `index.html` | The whole app, including all FM-51 data |
-| `sw.js` | Offline helper: fetches the newest version when online, uses the saved copy when offline |
+| `sw.js` | Offline helper: fetches the newest version when online, uses the saved copy when offline. It handles only this app's own files, so other apps in subfolders of the site are not affected. |
 | `manifest.webmanifest` | App name and icons for "Add to Home Screen" |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App icons |
 
 ## Updating
 
 1. Replace `index.html` with the new version.
-2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v27` to `-v28`) and replace that file too. The version shown at the bottom of About comes from this number when the app is built.
+2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v29` to `-v30`) and replace that file too. The version shown at the bottom of About comes from this number when the app is built.
 3. Commit to `main`. GitHub publishes within a few minutes (watch the Actions tab for a green check).
 4. Phones get the new version the next time the app fully reloads with a signal. On iPhone a home-screen app often just resumes instead of reloading, so use **About → Check for update** to pull the new version right away.
