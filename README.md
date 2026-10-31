@@ -45,6 +45,6 @@ All medical content comes from one publication:
 ## Updating
 
 1. Replace `index.html` with the new version.
-2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v22` to `-v23`) and replace that file too.
+2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v24` to `-v25`) and replace that file too. The version shown at the bottom of About comes from this number when the app is built.
 3. Commit to `main`. GitHub publishes within a few minutes (watch the Actions tab for a green check).
 4. Phones get the new version the next time the app opens with a signal.
