@@ -21,6 +21,7 @@ All medical content comes from one publication:
 ## Using the app
 
 - **Signs** are grouped in assessment order: scene size-up, primary assessment (life threats, airway, breathing, circulation, mental status), then secondary assessment (vital signs, a head-to-toe exam, and what the patient reports). Group names and chip wording are the app's own; FM-51's exact wording shows when you open a condition.
+- **Typing or dictating:** the search box accepts everyday phrases, such as "short of breath, weak pulse, bleeding on right leg," and suggests matching signs to tap. It skips phrases preceded by "no," "not" or "denies." The phrase list is the app's own wording, about 1,400 phrases, not FM-51's. It works offline, and iPhone dictation works in the box.
 - **Ranking:** rarer signs count more; a condition that explains everything you entered ranks above one that matches only part of it; ties go to the more urgent condition. The score is not a probability.
 - **Browse** lists every condition under its FM-51 protocol, in the manual's order.
 - **About** explains the ranking, the urgency and treatment tags, and includes FM-51's SAMPLE and OPQRST checklists (p. 107).
@@ -44,6 +45,6 @@ All medical content comes from one publication:
 ## Updating
 
 1. Replace `index.html` with the new version.
-2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v18` to `-v19`) and replace that file too.
+2. In `sw.js`, raise the number in `VERSION` (for example `ss-fm51-2025-v21` to `-v22`) and replace that file too.
 3. Commit to `main`. GitHub publishes within a few minutes (watch the Actions tab for a green check).
 4. Phones get the new version the next time the app opens with a signal.
