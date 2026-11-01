@@ -171,7 +171,7 @@ ul.mnem b{display:inline-block;width:1.4em;font-family:var(--f-mono);color:var(-
 .suggest{background:var(--sel);border-radius:8px;padding:10px 12px;margin:8px 0 4px}
 .sg-t{margin:0 0 8px;font-weight:700;font-size:.92rem}
 .sg-n{margin:8px 0 0;font-size:.82rem;color:var(--muted)}
-.hint{margin:6px 0 0;font-size:.82rem;color:var(--muted)}
+.hint{margin:0 0 8px;font-size:.82rem;color:var(--muted)}
 .qwrap{position:relative}
 .qwrap input{padding-right:44px}
 .qwrap input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
@@ -225,8 +225,8 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   <section class="panel" id="picker" aria-labelledby="pk">
     <h2 id="pk">What are you seeing?</h2>
     <p class="lede">Tap every scene/situation, primary and secondary sign that fits, working down in assessment order.</p>
+    <p class="hint">Or type or dictate what you see in your own words in the box below: matching signs appear as suggestions to tap.</p>
     <div class="search qwrap"><input id="q" type="search" placeholder="e.g. short of breath, weak pulse" autocomplete="off" aria-label="Type or dictate signs"><button type="button" id="qx" class="qx" aria-label="Clear the text box" hidden>×</button></div>
-    <p class="hint">Or type or dictate what you see in your own words in the box above: matching signs appear as suggestions to tap.</p>
     <div class="tray" id="tray" aria-live="polite"></div>
     <div class="gtools"><button type="button" class="toggle" id="expAll">Expand all</button><button type="button" class="toggle" id="colAll">Collapse all</button></div>
     <div id="groups"></div>
@@ -283,7 +283,7 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Children's normal ranges differ.</p>
   <p><b>Offline.</b> After the first visit the app works without a signal.<span id="off"></span></p>
   <p><button type="button" class="toggle" id="closeAbout">Close</button></p>
-  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 30 · updated 31 Oct 2026 · FM-51 2025 edition</p>
+  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 31 · updated 31 Oct 2026 · FM-51 2025 edition</p>
   <p id="updRow" hidden style="font-size:.85em;margin-top:.4em"><button type="button" class="toggle" id="updBtn">Check for update</button> <span id="updMsg"></span></p>
 </dialog>
 
@@ -526,7 +526,7 @@ renderPicker(); route();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').then(()=>{$('#off').textContent=' This device is ready to use offline.';$('#updRow').hidden=false}).catch(()=>{})}
 // Check for update: compare this copy's version with the one on the server, and if newer,
 // fetch the new page first (so offline use is never left broken), then clear saved copies and reload.
-const APPV=30;
+const APPV=31;
 $('#updBtn').onclick=async()=>{
   const msg=t=>{$('#updMsg').textContent=t};
   if(!navigator.onLine){msg('No signal. Try again when online.');return}
