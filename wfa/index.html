@@ -293,10 +293,10 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   </ul>
   <p>Steps beyond WFA (prescription medicines, IVs, airway devices, monitors) are left out; the protocol notes how many.</p>
   </details>
-  <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Children's normal ranges differ.</p>
+  <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Words like "under 12" or "over 20" are read as a range: breathing at or under 12 suggests slow breathing (p.112) and over 20 suggests fast breathing (p.175); pulse and temperature ranges use the cutoffs above. A number inside the cutoffs is shown as "Read as" so you know it was understood. Children's normal ranges differ.</p>
   <p><b>Offline.</b> After the first visit the app works without a signal.<span id="off"></span></p>
   <p><button type="button" class="toggle" id="closeAbout">Close</button></p>
-  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 4 · updated 1 Nov 2026 · FM-51 2025 + WMS</p>
+  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 5 · updated 1 Nov 2026 · FM-51 2025 + WMS</p>
   <p id="updRow" hidden style="font-size:.85em;margin-top:.4em"><button type="button" class="toggle" id="updBtn">Check for update</button> <span id="updMsg"></span></p>
 </dialog>
 
@@ -352,36 +352,54 @@ const VLAB=[[['heart','rate'],'hr'],[['heart','beat'],'hr'],[['pulse'],'hr'],[['
  [['respiratory','rate'],'rr'],[['breathing','rate'],'rr'],[['resp'],'rr'],[['resps'],'rr'],[['respiration'],'rr'],[['respirations'],'rr'],[['rr'],'rr'],[['breathing'],'rr'],
  [['core','temp'],'t'],[['body','temp'],'t'],[['core','temperature'],'t'],[['body','temperature'],'t'],[['temp'],'t'],[['temperature'],'t']];
 const AIR=new Set(['air','outside','outdoors','outdoor','ambient','weather','forecast']);
+// "under/below/less than N" and "over/above/more than N" are read as a range, using FM-51 cutoffs that fit a range:
+// breathing at or under 12 is inadequate (p.112) and over 20 is raised (p.175); pulse and temperature use the same cutoffs as plain numbers.
+const LT=new Set(['under','below','less','lower','beneath']), GT=new Set(['over','above','more','greater','higher','exceeding']);
 function vitals(w,cov){
   const out=[], isN=x=>/^\d+(p\d+)?$/.test(x), num=x=>parseFloat(x.replace('p','.'));
-  const hit=(type,v,unit)=>{
-    if(type==='hr'){ if(v>100) out.push(['fasthr','pulse over 100']); else if(v<50) out.push(['slowhr','pulse under 50']); else out.push(['','normal']); }
-    if(type==='rr'){ if(v>24) out.push(['fastbr','breathing over 24 a minute']); else if(v<10) out.push(['slowbr','breathing under 10 a minute']); else out.push(['','normal']); }
-    if(type==='t'){ if(unit==='c'||(unit!=='f'&&v<=45)) v=v*9/5+32;
-      if(v<95) out.push(['templow','temperature under 95 F']); else if(v>=104) out.push(['temphigh','temperature 104 F or more']); else if(v>100.4) out.push(['fever','temperature over 100.4 F']); else out.push(['','normal']); }
+  const NAME={hr:'Pulse',rr:'Breathing rate',t:'Temperature'};
+  const CUT={hr:'under 50 or over 100',rr:'under 10 or over 24',t:'under 95 °F or over 100.4 °F'};
+  const note=(type,cmp,shown)=>out.push(['',`${NAME[type]} ${cmp==='lt'?'under ':cmp==='gt'?'over ':''}${shown}: not outside FM-51's cutoffs (${type==='rr'&&cmp?'12 or under, or over 20':CUT[type]})`]);
+  const hit=(type,v,unit,cmp)=>{
+    const shown=String(v)+(type==='t'?(unit==='c'||(unit!=='f'&&v<=45)?' °C':' °F'):'');
+    if(type==='hr'){
+      if(cmp==='lt'){ if(v<=50) out.push(['slowhr','pulse under 50']); else note(type,cmp,shown); }
+      else if(cmp==='gt'){ if(v>=100) out.push(['fasthr','pulse over 100']); else note(type,cmp,shown); }
+      else if(v>100) out.push(['fasthr','pulse over 100']); else if(v<50) out.push(['slowhr','pulse under 50']); else note(type,cmp,shown); }
+    if(type==='rr'){
+      if(cmp==='lt'){ if(v<=12) out.push(['slowbr','breathing 12 or less a minute']); else note(type,cmp,shown); }
+      else if(cmp==='gt'){ if(v>=20) out.push(['fastbr','breathing over 20 a minute']); else note(type,cmp,shown); }
+      else if(v>24) out.push(['fastbr','breathing over 24 a minute']); else if(v<10) out.push(['slowbr','breathing under 10 a minute']); else note(type,cmp,shown); }
+    if(type==='t'){ const f=(unit==='c'||(unit!=='f'&&v<=45))?v*9/5+32:v;
+      if(cmp==='lt'){ if(f<=95) out.push(['templow','temperature under 95 F']); else note(type,cmp,shown); }
+      else if(cmp==='gt'){ if(f>=104) out.push(['temphigh','temperature 104 F or more']); else if(f>=100.4) out.push(['fever','temperature over 100.4 F']); else note(type,cmp,shown); }
+      else if(f<95) out.push(['templow','temperature under 95 F']); else if(f>=104) out.push(['temphigh','temperature 104 F or more']); else if(f>100.4) out.push(['fever','temperature over 100.4 F']); else note(type,cmp,shown); }
   };
+  const cmpBefore=(j,lo)=>{ for(let m=j-1;m>=Math.max(lo,j-3);m--){ if(LT.has(w[m])) return 'lt'; if(GT.has(w[m])) return 'gt'; } return ''; };
   for(let i=0;i<w.length;i++){
     if(cov[i]) continue;
-    // number followed by a unit: "120 bpm", "30 breaths a minute"
-    if(isN(w[i])&&/^(bpm|beats)$/.test(w[i+1]||'')){hit('hr',num(w[i]));cov[i]=cov[i+1]=true;continue}
-    if(isN(w[i])&&/^(breaths|respirations)$/.test(w[i+1]||'')){hit('rr',num(w[i]));cov[i]=cov[i+1]=true;continue}
+    // number followed by a unit: "120 bpm", "under 12 breaths a minute"
+    if(isN(w[i])&&/^(bpm|beats)$/.test(w[i+1]||'')){hit('hr',num(w[i]),'',cmpBefore(i,0));cov[i]=cov[i+1]=true;continue}
+    if(isN(w[i])&&/^(breaths|respirations)$/.test(w[i+1]||'')){hit('rr',num(w[i]),'',cmpBefore(i,0));cov[i]=cov[i+1]=true;continue}
     const lab=VLAB.find(([ws])=>ws.every((x,j)=>w[i+j]===x)); if(!lab) continue;
     const [ws,type]=lab; if(type==='t'&&w.some(x=>AIR.has(x))) continue;
-    for(let k=i+ws.length;k<w.length&&k<=i+ws.length+3;k++){
+    for(let k=i+ws.length;k<w.length&&k<=i+ws.length+4;k++){
       if(NEG.has(w[k])||VLAB.some(([v])=>v[0]===w[k])) break;
-      if(isN(w[k])){ const u=/^(c|celsius)$/.test(w[k+1]||'')?'c':(/^(f|fahrenheit)$/.test(w[k+1]||'')?'f':''); hit(type,num(w[k]),u);
-        for(let m=i;m<=k+(u?1:0);m++) cov[m]=true; i=k; break; }
+      if(isN(w[k])){ const u=/^(c|celsius)$/.test(w[k+1]||'')?'c':(/^(f|fahrenheit)$/.test(w[k+1]||'')?'f':'');
+        hit(type,num(w[k]),u,cmpBefore(k,i+ws.length));
+        const end=k+(u||/^(bpm|beats|breaths|respirations)$/.test(w[k+1]||'')?1:0);
+        for(let m=i;m<=end;m++) cov[m]=true; i=end; break; }
     }
   }
   return out;
 }
 function suggest(text){
-  const out=new Map(), miss=[];
-  const segs=text.toLowerCase().replace(/[’‘]/g,"'").replace(/(\d)\.(\d)/g,'$1p$2').replace(/(\d)(bpm|f|c)\b/g,'$1 $2').replace(/[^a-z0-9' ,;.\/\-]/g,' ').split(/[,;.\/]|\bbut\b|\balso\b|\bplus\b/);
+  const out=new Map(), miss=[], notes=[];
+  const segs=text.toLowerCase().replace(/[’‘]/g,"'").replace(/</g,' under ').replace(/>/g,' over ').replace(/(\d)\.(\d)/g,'$1p$2').replace(/(\d)(bpm|f|c)\b/g,'$1 $2').replace(/[^a-z0-9' ,;.\/\-]/g,' ').split(/[,;.\/]|\bbut\b|\balso\b|\bplus\b/);
   for(const seg of segs){
     const w=seg.replace(/-/g,' ').split(/\s+/).filter(Boolean); if(!w.length) continue;
     const cov=new Array(w.length).fill(false); const got=new Set(); let neg=false;
-    vitals(w,cov).forEach(([id,ph])=>{got.add(id); if(!out.has(id)) out.set(id,ph)});
+    vitals(w,cov).forEach(([id,ph])=>{got.add(id); if(id){ if(!out.has(id)) out.set(id,ph) } else notes.push(ph)});
     for(const [pw,ids,ph] of PHL){
       for(let i=0;i+pw.length<=w.length;i++){
         // phrase words in order; multi-word phrases may have up to 2 extra words in between
@@ -408,13 +426,13 @@ function suggest(text){
     if(w.some(x=>LIMB.has(x))&&(got.has('bleeding')||got.has('sevbleed'))&&!out.has('openwound')) out.set('openwound','wound on an arm or leg');
     if(!got.size&&!neg&&w.join(' ').length>2) miss.push(w.join(' '));
   }
-  return {ids:[...out.keys()].filter(id=>SBY[id]), miss};
+  return {ids:[...out.keys()].filter(id=>SBY[id]), miss, notes};
 }
 function renderPicker(){
   const q=$('#q').value.trim().toLowerCase(); const f=s=>!q||s.label.toLowerCase().includes(q);
   let html='';
-  const sg=q.length>1?suggest(q):{ids:[],miss:[]};
-  if(sg.ids.length) html+=`<div class="suggest"><p class="sg-t">Suggested signs for what you typed <span class="count">tap to select</span></p><div class="chips">${sg.ids.map(id=>chip(SBY[id])).join('')}</div>${sg.miss.length?`<p class="sg-n">No match for: ${esc(sg.miss.join(' · '))}</p>`:''}</div>`;
+  const sg=q.length>1?suggest(q):{ids:[],miss:[],notes:[]};
+  if(sg.ids.length||sg.notes.length) html+=`<div class="suggest">${sg.ids.length?`<p class="sg-t">Suggested signs for what you typed <span class="count">tap to select</span></p><div class="chips">${sg.ids.map(id=>chip(SBY[id])).join('')}</div>`:''}${sg.notes.length?`<p class="sg-n">Read as: ${esc(sg.notes.join(' · '))}</p>`:''}${sg.miss.length?`<p class="sg-n">No match for: ${esc(sg.miss.join(' · '))}</p>`:''}</div>`;
   GROUPS.forEach(g=>{const all=S.filter(s=>s.group===g), vis=all.filter(f); if(!vis.length) return; const n=all.filter(s=>sel.has(s.id)).length;
     if(SECT[g]&&!q) html+=`<div class="sect"><p class="sect-t">${esc(SECT[g][0])}</p><p class="sect-d">${esc(SECT[g][1])}</p></div>`;
     html+=`<details class="group" data-g="${esc(g)}" ${q||openG.has(g)?'open':''}><summary>${esc(g)}<span class="count">${n||''}</span></summary><div class="chips">${vis.map(chip).join('')}</div></details>`});
@@ -541,7 +559,7 @@ renderPicker(); route();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').then(()=>{$('#off').textContent=' This device is ready to use offline.';$('#updRow').hidden=false}).catch(()=>{})}
 // Check for update: compare this copy's version with the one on the server, and if newer,
 // fetch the new page first (so offline use is never left broken), then clear saved copies and reload.
-const APPV=4;
+const APPV=5;
 $('#updBtn').onclick=async()=>{
   const msg=t=>{$('#updMsg').textContent=t};
   if(!navigator.onLine){msg('No signal. Try again when online.');return}
