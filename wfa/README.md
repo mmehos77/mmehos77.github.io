@@ -27,5 +27,5 @@ The wilderness first aid companion to Symptom Sorter (FM-51), for IPWA patroller
 ## Updating
 
 1. Replace `index.html`.
-2. In `sw.js`, raise the number in `VERSION` (for example `ss-wfa-v7` to `-v8`) and replace that file too.
+2. In `sw.js`, raise the number in `VERSION` (for example `ss-wfa-v9` to `-v10`) and replace that file too.
 3. Commit to `main`. On phones, use **About → Check for update**.
