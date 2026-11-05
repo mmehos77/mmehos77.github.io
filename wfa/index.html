@@ -299,7 +299,7 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Words like "under 12" or "over 20" are read as a range: breathing at or under 12 suggests slow breathing (p.112) and over 20 suggests fast breathing (p.175); pulse and temperature ranges use the cutoffs above. A number inside the cutoffs is shown as "Read as" so you know it was understood. Children's normal ranges differ.</p>
   <p><b>Offline.</b> After the first visit the app works without a signal.<span id="off"></span></p>
   <p><button type="button" class="toggle" id="closeAbout">Close</button></p>
-  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 23 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
+  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 24 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
   <p id="updRow" hidden style="font-size:.85em;margin-top:.4em"><button type="button" class="toggle" id="updBtn">Check for update</button> <span id="updMsg"></span></p>
 </dialog>
 
@@ -324,9 +324,9 @@ const SECT={"Scene & situation":["Scene size-up","Is the scene safe? What happen
  "Life threats":["Primary assessment","Find and treat life threats first: airway, breathing, circulation and severe bleeding, then a quick mental status check (AVPU)."],
  "Vital signs":["Secondary assessment","Vital signs, then a head-to-toe exam, then the patient's history and complaints (SAMPLE, OPQRST in About)."]};
 const sel=new Set(); const openG=new Set(); let hideAbove=true, current=null; // every group starts collapsed on open
-try{localStorage.removeItem('ss3-open')}catch(e){}
-try{JSON.parse(localStorage.getItem('ss2-sel')||'[]').forEach(x=>SBY[x]&&sel.add(x));const h=localStorage.getItem('ss2-hide');if(h!==null)hideAbove=h==='1'}catch(e){}
-const save=()=>{try{localStorage.setItem('ss2-sel',JSON.stringify([...sel]));localStorage.setItem('ss2-hide',hideAbove?'1':'0')}catch(e){}};
+try{localStorage.removeItem('ss3-open');localStorage.removeItem('ss2-sel');localStorage.removeItem('ss2-hide')}catch(e){}   // ss2-*: the old storage both apps shared
+try{JSON.parse(localStorage.getItem('ss-wfa-sel')||'[]').forEach(x=>SBY[x]&&sel.add(x));const h=localStorage.getItem('ss-wfa-hide');if(h!==null)hideAbove=h==='1'}catch(e){}
+const save=()=>{try{localStorage.setItem('ss-wfa-sel',JSON.stringify([...sel]));localStorage.setItem('ss-wfa-hide',hideAbove?'1':'0')}catch(e){}};
 
 const LINKED=new Set(C.flatMap(c=>c.signs.map(s=>s[0])));
 function rank(){
@@ -373,6 +373,8 @@ function vitals(w,cov){
     const shown=String(v)+(type==='t'?(unit==='c'||(unit!=='f'&&v<=45)?' °C':' °F'):'');
     // blood sugar in mg/dL: FM-51 p.161 "Blood sugar <= 70 mg/dL and symptomatic" and "Blood sugar >= 250 mg/dL"
     if(type==='g'){ if(v<10||v>1000) return; if(v<=70) out.push(['bglow','blood sugar 70 or under']); else if(v>=250) out.push(['bghigh','blood sugar 250 or more']); else note(type,cmp,String(v)); return; }
+    if(type==='hr'&&v===0){ out.push(['nopulse','pulse 0']); return; }
+    if(type==='rr'&&v===0){ out.push(['apnea','breathing rate 0']); return; }
     if(type==='hr'){
       if(cmp==='lt'){ if(v<=50) out.push(['slowhr','pulse under 50']); else note(type,cmp,shown); }
       else if(cmp==='gt'){ if(v>=100) out.push(['fasthr','pulse over 100']); else note(type,cmp,shown); }
@@ -403,6 +405,13 @@ function vitals(w,cov){
     // single-letter shorthand ("P 120, R 28"): the number must come right after and be a plausible rate
     if(lab[0].length===1&&(lab[0][0]==='p'||lab[0][0]==='r')){ const nx=w[i+1]; if(!nx||!isN(nx)) continue; const v=num(nx), isP=lab[0][0]==='p';
       if(isP?(v<20||v>250):(v<4||v>60)){ out.push(['',`"${lab[0][0].toUpperCase()} ${nx}": not read as a ${isP?'pulse (expected 20 to 250)':'breathing rate (expected 4 to 60)'}`]); cov[i]=cov[i+1]=true; continue } }
+    // "HR absent", "pulse not palpable", "RR none": no pulse / not breathing
+    if(lab[1]==='hr'||lab[1]==='rr'){ const after=w.slice(i+lab[0].length,i+lab[0].length+4).join(' ');
+      if(/^(?:\S+ )?(?:is |was |are )?(absent|none|nil|zero|not palpable|not present|not detected|not found|not felt|unable to find|undetectable|nonpalpable)\b/.test(after)){
+        // a missing pulse in an arm or leg is a circulation problem below an injury, not cardiac arrest; a missing wrist pulse suggests shock
+        const limbP=lab[1]==='hr'&&(/^(pedal|distal|dorsalis|posterior|tibial|foot|feet|toe|ankle|leg|arm|hand|finger)/.test(w[i-1]||'')||/\b(in|at|below|of) (the |his |her |their |that |injured |left |right )*(foot|feet|toes?|ankle|leg|knee|arm|hand|wrist|fingers?|limb|injury|extremity)\b/.test(w.slice(i).join(' ')));
+        const radP=lab[1]==='hr'&&/^(radial|wrist)$/.test(w[i-1]||'');
+        out.push(limbP?['coldlimb','no pulse below the injury']:radP?['weakpulse','no wrist pulse']:lab[1]==='hr'?['nopulse','pulse absent']:['apnea','breathing absent']); for(let k=i;k<Math.min(w.length,i+lab[0].length+3);k++) cov[k]=true; continue } }
     const [ws,type]=lab; const tmode=type!=='t'?'':w.some(x=>AIR.has(x))?'air':(ws.length===1&&ws[0]==='temperature'&&!w.some(x=>BODYW.has(x)))?'bare':'';
     for(let k=i+ws.length;k<w.length&&k<=i+ws.length+4;k++){
       if(NEG.has(w[k])||VLAB.some(([v])=>v[0]===w[k])) break;
@@ -621,7 +630,7 @@ renderPicker(); route();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').then(()=>{$('#off').textContent=' This device is ready to use offline.';$('#updRow').hidden=false}).catch(()=>{})}
 // Check for update: compare this copy's version with the one on the server, and if newer,
 // fetch the new page first (so offline use is never left broken), then clear saved copies and reload.
-const APPV=23;
+const APPV=24;
 $('#updBtn').onclick=async()=>{
   const msg=t=>{$('#updMsg').textContent=t};
   if(!navigator.onLine){msg('No signal. Try again when online.');return}
