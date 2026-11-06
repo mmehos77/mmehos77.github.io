@@ -299,7 +299,7 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Words like "under 12" or "over 20" are read as a range: breathing at or under 12 suggests slow breathing (p.112) and over 20 suggests fast breathing (p.175); pulse and temperature ranges use the cutoffs above. A number inside the cutoffs is shown as "Read as" so you know it was understood. Children's normal ranges differ.</p>
   <p><b>Offline.</b> After the first visit the app works without a signal.<span id="off"></span></p>
   <p><button type="button" class="toggle" id="closeAbout">Close</button></p>
-  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 29 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
+  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 30 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
   <p id="updRow" hidden style="font-size:.85em;margin-top:.4em"><button type="button" class="toggle" id="updBtn">Check for update</button> <span id="updMsg"></span></p>
 </dialog>
 
@@ -541,7 +541,7 @@ function renderResults(){
     if(rest.length) h+=`<details class="partial"><summary>Other conditions that share a sign (${rest.length})</summary><ol class="results">${rest.map((x,i)=>card(x,i+main.length)).join('')}</ol></details>`;
   }
   $('#results').innerHTML=h;
-  const j=$('#jump'); j.hidden=!sel.size||!$('#detail').hidden; j.textContent=R.length?`See possible causes ↓`:'No matches yet ↓';
+  const j=$('#jump'); j.hidden=!sel.size||!$('#detail').hidden; j.dataset.down=R.length?'See possible causes ↓':'No matches yet ↓'; jumpLabel();
 }
 const PLAIN={'X':'allowed at EMR level','APO':"only help the patient take their own",'AIO':'autoinjector only','INO':'nasal spray only','LES':'needs extra local training and approval','NES(PO)':'by mouth only, and needs extra training'};
 const SRC=D.src;
@@ -558,6 +558,10 @@ function treatment(p,cid){
    ${p.history.length?`<h3>History to ask</h3><div class="cols"><ul>${p.history.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
    ${notes?`<div class="notes-head"><h3>Reference notes</h3>${nAbove?`<button type="button" class="toggle" id="tg" aria-pressed="${!hideAbove}">${hideAbove?'Show':'Hide'} ${nAbove} above-scope item${nAbove>1?'s':''}</button>`:''}</div><div class="notes${hideAbove?' hide-above':''}">${notes}</div>`:''}`;
 }
+// Floating button: "See possible causes ↓" while the signs are on screen; "↑ Back to signs" once the causes are in view
+function jumpLabel(){const j=$('#jump'); if(!j||j.hidden) return; const r=$('#results').getBoundingClientRect(), up=r.top<innerHeight*0.6;
+  j.dataset.mode=up?'up':'down'; j.textContent=up?'↑ Back to signs':(j.dataset.down||'See possible causes ↓')}
+addEventListener('scroll',jumpLabel,{passive:true}); addEventListener('resize',jumpLabel);
 function showDetail(html){$('#detail').innerHTML=`<button type="button" class="back" id="back">← Back to possible causes</button>`+html;$('#detail').hidden=false;$('#results').hidden=true;$('#jump').hidden=true;
   const pane=$('.pane-right'); if(pane) pane.scrollTop=0; if(innerWidth<900) $('#detail').scrollIntoView({block:'start'});}
 // Cross-reference: FM-51 has no hyponatremia protocol; it appears only in the Dehydration protocol's differential and notes.
@@ -612,7 +616,7 @@ document.addEventListener('click',e=>{
   if(e.target.id==='clr'){sel.clear();save();$('#q').value='';syncQx();renderPicker();route();return}
   if(e.target.closest('#qx')){$('#q').value='';syncQx();renderPicker();$('#q').focus();return}
   if(e.target.id==='back'){history.length>1?history.back():(location.hash='');return}
-  if(e.target.id==='jump'){$('#results').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return}
+  if(e.target.id==='jump'){(e.target.dataset.mode==='up'?$('#picker'):$('#results')).scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return}
   if(e.target.id==='tg'){hideAbove=!hideAbove;save();route();return}
 });
 const syncQx=()=>{$('#qx').hidden=!$('#q').value};
@@ -635,7 +639,7 @@ renderPicker(); route();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').then(()=>{$('#off').textContent=' This device is ready to use offline.';$('#updRow').hidden=false}).catch(()=>{})}
 // Check for update: compare this copy's version with the one on the server, and if newer,
 // fetch the new page first (so offline use is never left broken), then clear saved copies and reload.
-const APPV=29;
+const APPV=30;
 $('#updBtn').onclick=async()=>{
   const msg=t=>{$('#updMsg').textContent=t};
   if(!navigator.onLine){msg('No signal. Try again when online.');return}
