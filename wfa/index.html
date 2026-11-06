@@ -138,10 +138,10 @@ details.group .subh:first-of-type{margin-top:2px}
 
 #detail,#results{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 56px)}
 /* compact header */
-.bar-in{padding-block:5px;gap:8px}
+.bar-in{padding-block:5px;gap:6px}
 .brand{font-size:1.05rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand small{font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
-.bar button{min-height:30px;padding:3px 9px;font-size:.78rem;border-radius:5px}
+.bar button{min-height:30px;padding:3px 7px;font-size:.76rem;border-radius:5px}
 @media (min-width:900px){.pane-right{top:calc(env(safe-area-inset-top,0px) + 56px);max-height:calc(100vh - 72px)}}
 .gtools{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 6px}
 #browse{margin-bottom:18px}
@@ -220,13 +220,13 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
 <body>
 <div class="bar"><div class="bar-in">
   <p class="brand">Symptom Sorter (WFA)<small>FM-51 + WMS · Wilderness first aid scope</small></p>
-  <button type="button" id="browseBtn">Browse</button>
+  <button type="button" id="browseBtn">Conditions</button>
   <button type="button" id="aboutBtn">About</button>
 </div></div>
 
 <div class="wrap">
 <section class="panel" id="browse" hidden aria-labelledby="bh">
-  <div class="bhead"><h2 id="bh">All conditions</h2><button type="button" class="back" id="toSorter">← Back to symptom sorter</button></div>
+  <div class="bhead"><h2 id="bh">All conditions</h2><button type="button" class="back" id="toSorter">← Back to signs</button></div>
   <p class="lede">Listed under their FM-51 treatment protocols, in the manual's own order (Section 2000, protocols 2001–2310), followed by spinal injury, which FM-51 covers in its procedures (1400 and 1410). The WMS-only condition (hyponatremia) is listed last. Tap a condition for its signs and treatment by training level.</p>
   <div class="search"><input id="bq" type="search" placeholder="Filter by condition, protocol or sign" autocomplete="off" aria-label="Filter conditions"></div>
   <div class="gtools"><span class="lede" id="bcount" style="margin:0 auto 0 0"></span><button type="button" class="toggle" id="bExp">Expand all</button><button type="button" class="toggle" id="bCol">Collapse all</button></div>
@@ -299,7 +299,7 @@ ul.csigns q{quotes:"“" "”";color:var(--muted);font-weight:400}
   <p><b>Typed vital signs.</b> Numbers typed after pulse, breathing or temp suggest signs using FM-51's adult cutoffs: pulse over 100 or under 50 (pp.211, 142), breathing over 24 or under 10 a minute (p.85), temperature under 95 °F or 104 °F and above (pp.117, 178), and over 100.4 °F for fever (p.175). Temperatures of 45 or less are read as °C. Words like "under 12" or "over 20" are read as a range: breathing at or under 12 suggests slow breathing (p.112) and over 20 suggests fast breathing (p.175); pulse and temperature ranges use the cutoffs above. A number inside the cutoffs is shown as "Read as" so you know it was understood. Children's normal ranges differ.</p>
   <p><b>Offline.</b> After the first visit the app works without a signal.<span id="off"></span></p>
   <p><button type="button" class="toggle" id="closeAbout">Close</button></p>
-  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 28 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
+  <p class="ver" style="font-size:.8em;opacity:.65;margin-top:1em">Version 29 · updated 5 Nov 2026 · FM-51 2025 + WMS</p>
   <p id="updRow" hidden style="font-size:.85em;margin-top:.4em"><button type="button" class="toggle" id="updBtn">Check for update</button> <span id="updMsg"></span></p>
 </dialog>
 
@@ -598,7 +598,7 @@ function renderBrowse(){
 }
 function route(){
   const isB=location.hash==='#all';
-  $('#browse').hidden=!isB; $('#sorter').hidden=isB; $('#browseBtn').textContent=isB?'Sorter':'Browse';
+  $('#browse').hidden=!isB; $('#sorter').hidden=isB; $('#browseBtn').textContent=isB?'Signs':'Conditions';
   if(isB){current='all';$('#jump').hidden=true;renderBrowse();return}
   const h=location.hash, mc=h.match(/^#c-([a-z0-9_]+)$/), mp=h.match(/^#p(\d{4})$/);
   if(mc&&CBY[mc[1]]){current=mc[1];renderCond(mc[1])}
@@ -635,7 +635,7 @@ renderPicker(); route();
 if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').then(()=>{$('#off').textContent=' This device is ready to use offline.';$('#updRow').hidden=false}).catch(()=>{})}
 // Check for update: compare this copy's version with the one on the server, and if newer,
 // fetch the new page first (so offline use is never left broken), then clear saved copies and reload.
-const APPV=28;
+const APPV=29;
 $('#updBtn').onclick=async()=>{
   const msg=t=>{$('#updMsg').textContent=t};
   if(!navigator.onLine){msg('No signal. Try again when online.');return}

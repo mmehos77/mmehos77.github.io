@@ -23,7 +23,7 @@ All medical content comes from one publication:
 - **Signs** are grouped in assessment order: scene size-up, primary assessment (life threats, airway, breathing, circulation, mental status), then secondary assessment (vital signs, a head-to-toe exam, and what the patient reports). Group names and chip wording are the app's own; FM-51's exact wording shows when you open a condition.
 - **Typing or dictating:** the search box accepts everyday phrases, such as "short of breath, weak pulse, bleeding on right leg," and suggests matching signs to tap. It also reads vital-sign numbers ("pulse 120," "resp 28," "temp 104") using FM-51's adult cutoffs, listed in About. It skips phrases preceded by "no," "not" or "denies." The phrase list is the app's own wording, about 1,500 phrases, not FM-51's. It works offline, and iPhone dictation works in the box.
 - **Ranking:** rarer signs count more; a condition that explains everything you entered ranks above one that matches only part of it; ties go to the more urgent condition. The score is not a probability.
-- **Browse** lists every condition under its FM-51 protocol, in the manual's order.
+- **Conditions** (top-right button) lists every condition under its FM-51 protocol, in the manual's order.
 - **About** explains the ranking, the urgency and treatment tags, and includes FM-51's AVPU, SAMPLE and OPQRST checklists (pp. 107–108) and common WFA terms (A&O ×1–4, SOAP, ATMIST).
 - **Check for update** (bottom of About, installed app only) compares your copy's version with the one on GitHub and reloads if a newer one is there. Your picks are kept.
 - **Picks are kept** after closing the app until you tap **Clear all**. Clear them before starting on a new patient.
